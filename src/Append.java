@@ -24,7 +24,7 @@ public class Append { //not a runnable anymore, make your own thread to run in p
 	}
 	
 	public Boolean run() { 
-		//Connect to recipient, receive and update response
+		//TODO: Connect to recipient, receive and update response
 
 	}
 	
