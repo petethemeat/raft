@@ -1,57 +1,87 @@
+/*
+ * When starting up threads to handle events like RequestingVotes, keep track of them in an ArrayList
+ * or something. Sometimes those threads will need to be stopped based on another event. E.g. when requesting
+ * votes if a leader with a higher or equal term sends you a heartbeat, you become a follower and stop requesting votes. 
+ */
+public class RequestVote { // 5.2
+	private Integer term; // candidate's term
+	private Integer candidateId; // candidate requesting vote
+	private Integer lastLogIndex; // index of candidate's last log entry - 5.4
+	private Integer lastLogTerm; // term of candidate's last log entry - 5.4
+	private Integer recipientPort; // port of voter
+	private String recipientIP; // IP of voter
 
-public class RequestVote implements Runnable {
-	private Integer term;
-	private Integer candidateId;
-	private Integer lastLogIndex;
-	private Integer lastLogTerm;
-	private int numServers;
-	private static int myIDD;
-	private static List<String> serverList = new ArrayList<String>();
-	private static List<Integer> portList = new ArrayList<Integer>();
-	private static List<Boolean> serverDown = new ArrayList<Boolean>();
-	private static ReentrantLock crit = new ReentrantLock();
+	private Integer returnTerm; // currentTerm, for candidate to update itself
+	private Boolean voteGranted; // true means candidate received vote
 
-	public void receive(String message) {
-		
+	public void RequestVote(Integer term, Integer candidateId, Integer lastLogIndex, Integer lastLogTerm,
+			Integer recipientPort, Integer recipientIP) {
+		this.term = term;
+		this.candidateId = candidateId;
+		this.lastLogIndex = lastLogIndex;
+		this.lastLogTerm = lastLogTerm;
+		this.recipientPort = recipientPort;
+		this.recipientIP = recipeintIP;
+
+		this.returnTerm = null;
+		this.voteGranted = null;
 	}
 
-	@Override
-	public void run() {
-		String message = "requestVote " + term + " " + myIDD + " " + lastLogIndex + " " + lastLogTerm;
-		// Send request to all other servers
-		for (int i = 1; i <= numServers; ++i) {
-			if (i == myIDD || serverDown.get(i)) {
-				continue;
-			}
-			System.out.println("[DEBUG]server id " + i);
-			Socket sock = new Socket();
+	/* reply False if term < currentTerm - 5.1 */
+	/*
+	 * if votedFor is null or candidateId, and candidate's log is at least as
+	 * up-to-date as receiver's log, grant vote - 5.2, 5.4
+	 */
+	public void send() {
+		String message = "requestVote " + term + " " + candidateId + " " + lastLogIndex + " " + lastLogTerm;
+
+		// Send request to specified server
+		System.out.println("[DEBUG]server at IP " + recipientIP);
+		Socket sock = new Socket();
+		while (true) {
 			try {
 				sock.setSoTimeout(100);
 				System.out.println("[DEBUG]attempting to connect");
-				sock.connect(new InetSocketAddress(serverList.get(i), portList.get(i)), 100);
+				sock.connect(new InetSocketAddress(recipientIP, recipientPort, 100);
 				System.out.println("[DEBUG]got connection");
 				PrintStream pout = new PrintStream(sock.getOutputStream());
 				pout.println(message);
-				pout.flush();
-				System.out.println("\n[DEBUG] sent done message to " + i + ": " + message);
+				
+				Scanner sc = new Scanner(sock.getInputStream());
+				while (!sc.hasNextLine()) {}
+				// expects single line response, in space-delimited form: voteGranted returnTerm
+				voteGranted = sc.nextBoolean();
+				returnTerm = sc.nextInt();
+				
+				pout.close();
+				sc.close();
 				sock.close();
+				System.out.println("\n[DEBUG] sent done message to " + recipientIP + ": " + message);
+				break;
 				// TODO crash after sending first one
-			} catch (Exception e) { // time out on receiving the response as
-									// well
-				System.out.println("Server " + i + " has timed out or experienced a problem.");
-				// indicate that the server has crashed, and this counts as an
-				// acknowledgement
-				try {
-					crit.lock();
-					serverDown.set(i, true);
-				} catch (Exception f) {
-					f.printStackTrace();
-				} finally {
-					crit.unlock();
-				}
+			} catch (Exception e) {
+
+				/* time out on receiving the response as */
+				System.out.println("Server at IP " + recipientIP + " has timed out or experienced a problem.");
 			}
 		}
 
+	}
+
+	/*
+	 * Check if it returns null. If so, no connection was made. However, this
+	 * issue shouldn't come up.
+	 */
+	public Integer getReturnTerm() {
+		return this.returnTerm;
+	}
+
+	/*
+	 * Check if it returns null. If so, no connection was made. However, this
+	 * issue shouldn't come up.
+	 */
+	public Boolean getVoteGranted() {
+		return this.voteGranted;
 	}
 
 }
