@@ -8,7 +8,7 @@ import java.util.Scanner;
  * or something. Sometimes those threads will need to be stopped based on another event. E.g. when requesting
  * votes if a leader with a higher or equal term sends you a heartbeat, you become a follower and stop requesting votes. 
  */
-public class RequestVote implements Runnable{ // 5.2
+public class RequestVote implements Runnable { // 5.2
 	private Integer term; // candidate's term
 	private Integer candidateId; // candidate requesting vote
 	private Integer lastLogIndex; // index of candidate's last log entry - 5.4
@@ -43,36 +43,35 @@ public class RequestVote implements Runnable{ // 5.2
 		// Send request to specified server
 		System.out.println("[DEBUG]server at IP " + recipientIP);
 		Socket sock = new Socket();
-		while (true) {
-			try {
-				sock.setSoTimeout(100);
-				System.out.println("[DEBUG]attempting to connect");
-				sock.connect(new InetSocketAddress(recipientIP, recipientPort, 100);
-				System.out.println("[DEBUG]got connection");
-				PrintStream pout = new PrintStream(sock.getOutputStream());
-				pout.println(message);
-				
-				Scanner sc = new Scanner(sock.getInputStream());
-				while (!sc.hasNextLine()) {}
-				// expects single line response, in space-delimited form: voteGranted returnTerm
-				voteGranted = sc.nextBoolean();
-				returnTerm = sc.nextInt();
-				
-				Server.updateVotes(voteGranted);
-				Server.updateTerm(returnTerm);
-				
-				pout.close();
-				sc.close();
-				sock.close();
-				System.out.println("\n[DEBUG] sent done message to " + recipientIP + ": " + message);
-				break;
-				// TODO crash after sending first one
-			} catch (Exception e) {
+		try {
+			sock.setSoTimeout(100);
+			System.out.println("[DEBUG]attempting to connect");
+			sock.connect(new InetSocketAddress(recipientIP, recipientPort), 100);
+			System.out.println("[DEBUG]got connection");
+			PrintStream pout = new PrintStream(sock.getOutputStream());
+			pout.println(message);
 
-				/* time out on receiving the response as */
-				System.out.println("Server at IP " + recipientIP + " has timed out or experienced a problem.");
+			Scanner sc = new Scanner(sock.getInputStream());
+			while (!sc.hasNextLine()) {
 			}
-			
+			// expects single line response, in space-delimited form:
+			// voteGranted returnTerm
+			voteGranted = sc.nextBoolean();
+			returnTerm = sc.nextInt();
+
+			Server.updateVotes(voteGranted);
+			Server.updateTerm(returnTerm);
+
+			pout.close();
+			sc.close();
+			sock.close();
+			System.out.println("\n[DEBUG] sent done message to " + recipientIP + ": " + message);
+			break;
+			// TODO crash after sending first one
+		} catch (Exception e) {
+
+			/* time out on receiving the response as */
+			System.out.println("Server at IP " + recipientIP + " has timed out or experienced a problem.");
 		}
 
 	}

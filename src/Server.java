@@ -68,6 +68,7 @@ public class Server
 				{
 					String message = handleAppend(sc);
 					
+					
 					sc.close();
 					tcpOutput.println(message);
 				}
@@ -82,15 +83,22 @@ public class Server
 				
 				else if(token.equals("client"))
 				{
-					String message = handleClient(sc);
+					if(role != Role.leader)
+					{
+						tcpOutput.println(leaderId.toString());
+						continue;
+					}
+
+					handleClient(sc);
+					append(dataSocket);
+					
 					sc.close();
-					tcpOutput.println(message);
 				}
 				if(role == Role.candidate)
 				{
 					if(votes > connections.size()/2){
 						role = Role.leader;
-						append();
+						append(null);
 					}
 				}
 				
@@ -100,7 +108,7 @@ public class Server
 				switch(role)
 				{
 				case leader: 
-					append();
+					append(null);
 					break;
 					
 				case follower:
@@ -117,7 +125,7 @@ public class Server
 				case candidate: 
 					if(votes > connections.size()/2){
 						role = Role.leader;
-						append();
+						append(null);
 					}
 					
 				}
@@ -133,7 +141,7 @@ public class Server
 		
 	}
 
-	private static void append() {
+	private static void append(Socket dataSocket) {
 		for(int i =0; i < connections.size(); i++)
 		{
 			if(i == myId) continue;
@@ -151,7 +159,7 @@ public class Server
 			Connection currentConnection = connections.get(i);
 			
 			Append current = new Append(currentTerm, myId, currentIndex, log.get(currentIndex).term, commitIndex, entries, 
-					currentConnection.ip.toString(), currentConnection.port, i);
+					currentConnection.ip.toString(), currentConnection.port, i, dataSocket);
 			executor.submit(current);
 			
 		}
@@ -227,13 +235,11 @@ public class Server
 		else return "false " + currentTerm.toString();	
 	}
 	
-	private static String handleClient(Scanner sc)
+	private static void handleClient(Scanner sc)
 	{
-		if(role != Role.leader) return leaderId.toString();
 		int newState = Integer.parseInt(sc.next());
 		log.add(new LogEntry(currentTerm, newState));
 		
-		return "success";
 	}
 	public static synchronized void updateTerm(Integer otherTerm)
 	{
@@ -245,11 +251,11 @@ public class Server
 		}
 	}
 	
-	public static synchronized void updateNextAndMatch(Boolean success, Integer recipientId, Integer leaderCommit)
+	public static synchronized Boolean updateNextAndMatch(Boolean success, Integer recipientId, Integer leaderCommit)
 	{
 		if(success)
 		{
-			Server.nextIndex.set(recipientId, leaderCommit);
+			Server.nextIndex.set(recipientId, leaderCommit + 1);
 			Server.matchIndex.set(recipientId, leaderCommit);
 		}
 		else
@@ -257,6 +263,14 @@ public class Server
 			int currentIndex = Server.nextIndex.get(recipientId);
 			Server.nextIndex.set(recipientId, currentIndex - 1);
 		}
+		
+		int count = 0;
+		for(Integer index : Server.matchIndex) if(index == leaderCommit) count++;
+		
+		if(count > connections.size()/2) return true;
+		
+		//TODO commit change and send back string response
+		return false;
 	}
 	
 	public static synchronized void updateVotes(Boolean result)
