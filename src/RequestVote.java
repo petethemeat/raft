@@ -8,7 +8,7 @@ import java.util.Scanner;
  * or something. Sometimes those threads will need to be stopped based on another event. E.g. when requesting
  * votes if a leader with a higher or equal term sends you a heartbeat, you become a follower and stop requesting votes. 
  */
-public class RequestVote implements Runnable{ // 5.2
+public class RequestVote implements Runnable { // 5.2
 	private Integer term; // candidate's term
 	private Integer candidateId; // candidate requesting vote
 	private Integer lastLogIndex; // index of candidate's last log entry - 5.4
