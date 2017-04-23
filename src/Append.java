@@ -1,4 +1,5 @@
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -14,12 +15,13 @@ public class Append implements Runnable{ //not a runnable anymore, make your own
 	private String recipientIP;
 	private int recipientPort;
 	private int recipientId;
+	private Socket dataSocket;
 	
 	private int returnTerm; //returned term, for the leader to update itself
 	private Boolean success; //true iff follower contained entry matching prevLogIndex and prevLogTerm
 							//null if not finished
 	public Append(int term, int leaderID, int prevLogIndex, 
-				int prevLogTerm, int leaderCommit, LogEntry[] entries, String recipientIP, int recipientPort, int recipientId)
+				int prevLogTerm, int leaderCommit, LogEntry[] entries, String recipientIP, int recipientPort, int recipientId, Socket dataSocket)
 	{
 		this.term = term;
 		this.leaderID = leaderID;
@@ -30,6 +32,8 @@ public class Append implements Runnable{ //not a runnable anymore, make your own
 		this.recipientIP = recipientIP;
 		this.recipientPort = recipientPort;
 		this.recipientId = recipientId;
+		this.dataSocket = dataSocket;
+		
 	}
 	
 	//Attempts to send once, with timeout of one second
@@ -51,7 +55,12 @@ public class Append implements Runnable{ //not a runnable anymore, make your own
 			success = sc.nextBoolean();
 			returnTerm = sc.nextInt();
 			
-			Server.updateNextAndMatch(success, recipientId, leaderCommit);
+			if(Server.updateNextAndMatch(success, recipientId, leaderCommit) && dataSocket != null)
+			{
+				
+				PrintWriter out = new PrintWriter(dataSocket.getOutputStream());
+				out.println("success");
+			}
 			Server.updateTerm(returnTerm);
 			
 			sock.close();
