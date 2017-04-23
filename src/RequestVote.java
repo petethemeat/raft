@@ -1,9 +1,14 @@
+import java.io.PrintStream;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.util.Scanner;
+
 /*
  * When starting up threads to handle events like RequestingVotes, keep track of them in an ArrayList
  * or something. Sometimes those threads will need to be stopped based on another event. E.g. when requesting
  * votes if a leader with a higher or equal term sends you a heartbeat, you become a follower and stop requesting votes. 
  */
-public class RequestVote { // 5.2
+public class RequestVote implements Runnable{ // 5.2
 	private Integer term; // candidate's term
 	private Integer candidateId; // candidate requesting vote
 	private Integer lastLogIndex; // index of candidate's last log entry - 5.4
@@ -14,14 +19,14 @@ public class RequestVote { // 5.2
 	private Integer returnTerm; // currentTerm, for candidate to update itself
 	private Boolean voteGranted; // true means candidate received vote
 
-	public void RequestVote(Integer term, Integer candidateId, Integer lastLogIndex, Integer lastLogTerm,
-			Integer recipientPort, Integer recipientIP) {
+	public RequestVote(Integer term, Integer candidateId, Integer lastLogIndex, Integer lastLogTerm,
+			Integer recipientPort, String recipientIP) {
 		this.term = term;
 		this.candidateId = candidateId;
 		this.lastLogIndex = lastLogIndex;
 		this.lastLogTerm = lastLogTerm;
 		this.recipientPort = recipientPort;
-		this.recipientIP = recipeintIP;
+		this.recipientIP = recipientIP;
 
 		this.returnTerm = null;
 		this.voteGranted = null;
@@ -32,7 +37,7 @@ public class RequestVote { // 5.2
 	 * if votedFor is null or candidateId, and candidate's log is at least as
 	 * up-to-date as receiver's log, grant vote - 5.2, 5.4
 	 */
-	public void send() {
+	public void run() {
 		String message = "requestVote " + term + " " + candidateId + " " + lastLogIndex + " " + lastLogTerm;
 
 		// Send request to specified server
@@ -53,6 +58,9 @@ public class RequestVote { // 5.2
 				voteGranted = sc.nextBoolean();
 				returnTerm = sc.nextInt();
 				
+				Server.updateVotes(voteGranted);
+				Server.updateTerm(returnTerm);
+				
 				pout.close();
 				sc.close();
 				sock.close();
@@ -64,6 +72,7 @@ public class RequestVote { // 5.2
 				/* time out on receiving the response as */
 				System.out.println("Server at IP " + recipientIP + " has timed out or experienced a problem.");
 			}
+			
 		}
 
 	}
