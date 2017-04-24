@@ -6,7 +6,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-
+//
 public class Client {
 
 	static String hostAddress;
@@ -20,7 +20,6 @@ public class Client {
 	static byte[] sBuffer;
 	static ArrayList<String> ipAddresses = null;
 	static ArrayList<Integer> ports = null;
-	static List<Boolean> serverDown = new ArrayList<Boolean>();
 	
 	public static void main(String[] args) {
 		Scanner sc = new Scanner(System.in);
@@ -35,23 +34,26 @@ public class Client {
 			String[] ipPort = port.split(":");
 			ipAddresses.add(ipPort[0]);
 			ports.add(Integer.parseInt(ipPort[1]));
-			serverDown.add(false);
 		}
 
 		while (sc.hasNextLine()) {
 			String cmd = sc.nextLine();
+			cmd = "client " + cmd;
 			String[] tokens = cmd.split(" ");
 			if (tokens[0].equals("purchase") || tokens[0].equals("cancel") || tokens[0].equals("list") || tokens[0].equals("search")) {
 				// send appropriate command to the server and display the
 				// appropriate responses form the server
 				for(int i = 0; true; i = (i+1)%numServer){
 					i = getTcpSocket(); //automatically loops to the first open socket
-					if(sendTcpRequest(cmd)){ //returns true if there is an exception in the printstream, server is down, try the next
-						serverDown.set(i, true);
+					if(sendTcpRequest(cmd) == -1){ //returns -1 if there is an exception in the printstream, server is down, try the next
 						continue;
 					}
-					if(echoTcpResponse(i)){
-						serverDown.set(i, true);
+					int resp = echoTcpResponse(i);
+					if(resp == -1){ //indicates failure
+						continue;
+					}
+					else if(resp >= 0){
+						i = resp - 1;
 						continue;
 					}
 					break;
@@ -84,12 +86,15 @@ public class Client {
 		return true;
 	}
 
-	private static boolean sendTcpRequest(String message) {
+	private static int sendTcpRequest(String message) {
 		outStream.println(message);
-		return outStream.checkError(); //function returns true if an exception occurred
+		if(outStream.checkError()){ //function returns -1 if an exception occurred
+			return -1;
+		}
+		else return 0;
 	}
 
-	private static boolean echoTcpResponse(int i) {
+	private static int echoTcpResponse(int i) {
 		//System.out.println("[DEBUG]Receiving message");
 		while(!inStream.hasNext()){
 			//System.out.println("[DEBUG] timed out, pinging");
@@ -99,25 +104,29 @@ public class Client {
 					e.printStackTrace();
 				}
 			if(!pingSuccessful(i)){
-				return true;
+				return -1;
 			}
 			else{
 				//System.out.println("[DEBUG] ping successful");
 			}
 		}
-		while (inStream.hasNextLine()) { 
+		boolean firstline = true;
+		while (inStream.hasNextLine()) { //FIXME: return number of net leader if a "nope" message 
 			String str = inStream.nextLine(); //will automatically return a blank line after 100ms
+			if(firstline){
+				String[] test = str.split(" ");
+				if(test[0].equals("fail")){
+					return Integer.parseInt(test[1]);
+				}
+			}
 			System.out.println(str);
 		}
 		//System.out.println("[DEBUG]That's it");
-		return false;
+		return -2; //-2 encodes a successful read
 	}
 
 	private static int getTcpSocket() {
 		for (int i = 0; true; i = (i + 1) % numServer) {
-			if(serverDown.get(i)){
-				continue;
-			}
 			try {
 				//System.out.println("[DEBUG]trying server " + (i));
 				tcpSocket = new Socket();
@@ -131,7 +140,6 @@ public class Client {
 				e.printStackTrace();
 			} catch (IOException e) {
 				//System.out.println("[DEBUG]server " + i + " timed out");
-				serverDown.set(i, true);
 				continue;
 			}
 		}
