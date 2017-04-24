@@ -5,6 +5,7 @@ import java.io.InterruptedIOException;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -79,7 +80,7 @@ public class Server
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		//TODO read in ip adress and ports for other servers
+		//TODO read in ip address and ports for other servers
 		
 		//TODO set personal id
 		
@@ -89,11 +90,20 @@ public class Server
 		role = Role.follower;	//set initial role to follower
 		log.add(new LogEntry(0, "_"));	//add initial log entry "_" means no-op
 		
+		ServerSocket tcpListener = null;
+		try
+		{
+			tcpListener = new ServerSocket(connections.get(myId).port);
+		}
+		catch(IOException e)
+		{
+			e.printStackTrace();
+		}
+		
 		while(true)
 		{
 			try
 			{
-				ServerSocket tcpListener = new ServerSocket(connections.get(myId).port);
 				if(role == Role.follower)
 				{
 					tcpListener.setSoTimeout(ThreadLocalRandom.current().nextInt(minTimeOut, maxTimeOut + 1)); 
@@ -163,8 +173,9 @@ public class Server
 						append(null);
 					}
 				}
+				
 				dataSocket.close();
-				tcpListener.close();
+
 			}
 			catch(InterruptedIOException e)
 			{
@@ -208,18 +219,22 @@ public class Server
 						append(null);
 					}
 					
-				}
-					
-			
-			} 
-			catch (IOException e) {
+				} 
+			}catch (SocketException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+					
+			
+			} 
+
 
 		}
 		
-	}
+	
 
 	private static void append(Socket dataSocket) {
 		
@@ -429,7 +444,9 @@ public class Server
 		return reply;
 	}
 
-	
+	public static Integer getTerm() {
+		return currentTerm;
+	}
 	
 
 }
