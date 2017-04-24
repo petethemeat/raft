@@ -69,11 +69,11 @@ public class Server
 		
 		try {
 			Scanner ipSc = new Scanner(new File(args[1]));
-			myId = Integer.parseInt(ipSc.next());
+			myId = Integer.parseInt(ipSc.nextLine());
 			while(ipSc.hasNext())
 			{
 				String[] parts = ipSc.nextLine().split(":");
-				connections.add(new Connection(Integer.parseInt(parts[0]), Integer.parseInt(parts[1])));
+				connections.add(new Connection(parts[0], Integer.parseInt(parts[1])));
 			}
 		} catch (FileNotFoundException e1) {
 			// TODO Auto-generated catch block
@@ -134,7 +134,7 @@ public class Server
 					//redirect if not the current leader
 					if(role != Role.leader)
 					{
-						tcpOutput.println(leaderId.toString());
+						tcpOutput.println("fail" + leaderId.toString());
 						continue;
 					}
 
@@ -236,7 +236,7 @@ public class Server
 			
 			//start append RPC
 			Append current = new Append(currentTerm, myId, currentIndex, log.get(currentIndex).term, commitIndex, log, 
-					currentConnection.ip.toString(), currentConnection.port, i, dataSocket, localIndex);
+					currentConnection.ip, currentConnection.port, i, dataSocket, localIndex);
 			executor.submit(current);
 			
 		}
@@ -307,7 +307,7 @@ public class Server
 			int lastLogIndex = log.size() - 1;
 			
 			RequestVote current = new RequestVote(currentTerm, myId, lastLogIndex, log.get(lastLogIndex).term, 
-						currentConnection.port, currentConnection.ip.toString());
+						currentConnection.port, currentConnection.ip);
 			executor.submit(current);
 			
 		}
