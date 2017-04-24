@@ -436,7 +436,9 @@ public class Server
 		return reply;
 	}
 
-	
+	public static Integer getTerm() {
+		return currentTerm;
+	}
 	
 
 }
