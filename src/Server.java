@@ -89,11 +89,20 @@ public class Server
 		role = Role.follower;	//set initial role to follower
 		log.add(new LogEntry(0, "_"));	//add initial log entry "_" means no-op
 		
+		ServerSocket tcpListener = null;
+		try
+		{
+			tcpListener = new ServerSocket(connections.get(myId).port);
+		}
+		catch(IOException e)
+		{
+			e.printStackTrace();
+		}
+		
 		while(true)
 		{
 			try
 			{
-				ServerSocket tcpListener = new ServerSocket(connections.get(myId).port);
 				if(role == Role.follower)
 				{
 					tcpListener.setSoTimeout(ThreadLocalRandom.current().nextInt(minTimeOut, maxTimeOut + 1)); 
@@ -202,7 +211,8 @@ public class Server
 						for(int i = 0; i < connections.size(); i++)
 						{
 							matchIndex.add(0);
-							nextIndex.add(log.size());
+							e.printStackTrace();
+						}		nextIndex.add(log.size());
 						}
 						//Call and empty heart beat
 						append(null);
@@ -212,10 +222,7 @@ public class Server
 					
 			
 			} 
-			catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+
 
 		}
 		
