@@ -134,7 +134,7 @@ public class Server
 					//redirect if not the current leader
 					if(role != Role.leader)
 					{
-						tcpOutput.println("fail" + leaderId.toString());
+						tcpOutput.println("fail " + leaderId.toString());
 						continue;
 					}
 
