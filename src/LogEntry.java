@@ -20,6 +20,8 @@ public class LogEntry {
 			@Override
 			public String toString()
 			{
+				//split at ; to get term and command
+				//split at : to get command in pieces
 				return term.toString() + ";" + command.replaceAll(" ", ":");
 			}
 }

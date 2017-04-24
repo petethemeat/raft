@@ -56,10 +56,13 @@ public class Server
 		
 		//TODO read in ip adress and ports for other servers
 		
+		//TODO set personal id
+		
+		
 		
 		
 		role = Role.follower;	//set initial role to follower
-		log.add(new LogEntry(0, "_"));
+		log.add(new LogEntry(0, "_"));	//add initial log entry "_" means no-op
 		
 		while(true)
 		{
@@ -373,7 +376,7 @@ public class Server
 	 * Code for running the statemachine
 	 */
 	
-	public static String runMachine()
+	public static synchronized String runMachine()
 	{
 		String reply = null;
 		while(lastApplied < commitIndex)
