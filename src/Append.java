@@ -46,11 +46,11 @@ public class Append implements Runnable{ //not a runnable anymore, make your own
 		//Implementation of retry logic
 		while(true)
 		{
-			entries = entries.subList(prevLogIndex + 1, localIndex + 1);
+			List<LogEntry> subEntries = entries.subList(prevLogIndex + 1, localIndex + 1);
 			Socket sock = new Socket();
 			String message = "append " + term + " " + leaderID + " " + prevLogIndex + " " + prevLogTerm + " " + leaderCommit;
-			for(int i = 0; i < entries.size(); ++i){
-				message = message + " " + entries.get(i).toString();
+			for(int i = 0; i < subEntries.size(); ++i){
+				message = message + " " + subEntries.get(i).toString();
 			}
 			try{
 				sock.setSoTimeout(1000);
@@ -87,7 +87,9 @@ public class Append implements Runnable{ //not a runnable anymore, make your own
 				if(success) return;
 			}
 			catch(Exception e){
-				return;
+				if(Server.getTerm() != term){
+					return;
+				}
 			}
 		}
 
