@@ -4,6 +4,7 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
@@ -18,6 +19,7 @@ public class Server
 		candidate,
 		follower
 	}
+	private static Inventory inventory;
 	
 	private static Role role;
 	private static Integer myId;
@@ -41,7 +43,15 @@ public class Server
 	
 	public static void main(String[] args)
 	{
+		
+		
+		Hashtable<String, Integer> input = new Hashtable<String,Integer>();
+		//TODO read in inventory file
+		inventory = new Inventory(input);
+		
 		//TODO read in ip adress and ports for other servers
+		
+		
 		
 		role = Role.follower;	//set initial role to follower
 		log.add(new LogEntry(0, "_"));
@@ -164,20 +174,14 @@ public class Server
 		for(int i =0; i < connections.size(); i++)
 		{
 			if(i == myId) continue;
-
 			
-			LogEntry[] entries = null;
-			int currentIndex = Server.nextIndex.get(i) - 1; //CurrentIndex
-			 
-			if(currentIndex < localIndex)
-			{
-				List<LogEntry> sub = log.subList(currentIndex + 1, localIndex + 1);
-				entries = sub.toArray(new LogEntry[sub.size()]);
-			}
-			
+			//get prevlog index for server
+			int currentIndex = Server.nextIndex.get(i) - 1; //CurrentIndex	
+			//get ip and port
 			Connection currentConnection = connections.get(i);
 			
-			Append current = new Append(currentTerm, myId, currentIndex, log.get(currentIndex).term, commitIndex, entries, 
+			//start append RPC
+			Append current = new Append(currentTerm, myId, currentIndex, log.get(currentIndex).term, commitIndex, log, 
 					currentConnection.ip.toString(), currentConnection.port, i, dataSocket, localIndex);
 			executor.submit(current);
 			
@@ -322,6 +326,42 @@ public class Server
 	{
 		if(result) votes++;
 	}
+	
+	
+	
+	
+	/*
+	 * Code for running the statemachine
+	 */
+	
+	public static String runMachine()
+	{
+		String reply = null;
+		while(lastApplied < commitIndex)
+		{
+			String message = log.get(lastApplied + 1).command;
+			String[] parts = message.split(":");
+			
+			switch(parts[0])
+			{
+			case "purchase":
+				reply = inventory.purchase(parts[1], parts[2], Integer.parseInt(parts[3]));
+				break;
+			case "cancel":
+				reply = inventory.cancel(Integer.parseInt(parts[1]));
+				break;
+			case "list":
+				reply = inventory.list();
+			case "search":
+				reply = inventory.search(parts[1]);
+			case "_":
+				break;
+			}
+		}
+		return reply;
+	}
+	
+	
 
 	
 	public class Connection

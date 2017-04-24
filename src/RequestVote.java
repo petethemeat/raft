@@ -66,7 +66,7 @@ public class RequestVote implements Runnable { // 5.2
 			sc.close();
 			sock.close();
 			System.out.println("\n[DEBUG] sent done message to " + recipientIP + ": " + message);
-			break;
+			return;
 			// TODO crash after sending first one
 		} catch (Exception e) {
 
