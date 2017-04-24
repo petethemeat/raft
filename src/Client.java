@@ -115,7 +115,7 @@ public class Client {
 			String str = inStream.nextLine(); //will automatically return a blank line after 100ms
 			if(firstline){
 				String[] test = str.split(" ");
-				if(test[0].equals("nope")){
+				if(test[0].equals("fail")){
 					return Integer.parseInt(test[1]);
 				}
 			}
