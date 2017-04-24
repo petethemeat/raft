@@ -5,6 +5,7 @@ import java.io.InterruptedIOException;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -79,7 +80,7 @@ public class Server
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		//TODO read in ip adress and ports for other servers
+		//TODO read in ip address and ports for other servers
 		
 		//TODO set personal id
 		
@@ -172,8 +173,9 @@ public class Server
 						append(null);
 					}
 				}
+				
 				dataSocket.close();
-				tcpListener.close();
+
 			}
 			catch(InterruptedIOException e)
 			{
@@ -211,14 +213,20 @@ public class Server
 						for(int i = 0; i < connections.size(); i++)
 						{
 							matchIndex.add(0);
-							e.printStackTrace();
-						}		nextIndex.add(log.size());
+							nextIndex.add(log.size());
 						}
 						//Call and empty heart beat
 						append(null);
 					}
 					
-				}
+				} 
+			}catch (SocketException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 					
 			
 			} 
@@ -226,7 +234,7 @@ public class Server
 
 		}
 		
-	}
+	
 
 	private static void append(Socket dataSocket) {
 		
