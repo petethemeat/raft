@@ -42,10 +42,11 @@ public class Append implements Runnable{ //not a runnable anymore, make your own
 	
 	//Attempts to send once, with timeout of one second
 	public void run() { 
+		
+		//Implementation of retry logic
 		while(true)
 		{
 			entries = entries.subList(prevLogIndex + 1, localIndex + 1);
-			//TODO: Connect to recipient, receive and update response
 			Socket sock = new Socket();
 			String message = "append " + term + " " + leaderID + " " + prevLogIndex + " " + prevLogTerm + " " + leaderCommit;
 			for(int i = 0; i < entries.size(); ++i){
@@ -63,12 +64,16 @@ public class Append implements Runnable{ //not a runnable anymore, make your own
 				returnTerm = sc.nextInt();
 				
 				Server.updateNextAndMatch(success, recipientId, leaderCommit);
-				if(Server.checkForCommit(localIndex)) //TODO fix this
+				if(Server.checkForCommit(localIndex)) 
 				{
 					//TODO run state machine from lastapplied to commitindex
 					String reply = Server.runMachine();
 					
+					//this could happen during a routine heartbeat
+				
+					if(dataSocket == null) return;
 					
+					//Write to client 
 					PrintWriter out = new PrintWriter(dataSocket.getOutputStream());
 					out.println(reply);
 					return;

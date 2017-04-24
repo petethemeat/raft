@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Server
 {
@@ -40,6 +41,10 @@ public class Server
 	
 	public static ExecutorService executor = Executors.newFixedThreadPool(10);
 	
+	private static final int minTimeOut = 300;
+	private static final int maxTimeOut = 500;
+	
+	
 	
 	public static void main(String[] args)
 	{
@@ -63,7 +68,7 @@ public class Server
 				ServerSocket tcpListener = new ServerSocket(connections.get(myId).port);
 				if(role == Role.follower)
 				{
-					tcpListener.setSoTimeout(500); //needs to be random
+					tcpListener.setSoTimeout(ThreadLocalRandom.current().nextInt(minTimeOut, maxTimeOut + 1)); 
 				}
 				
 				else tcpListener.setSoTimeout(100); //needs to be shorter for candidates and leaders
@@ -124,7 +129,7 @@ public class Server
 						for(int i = 0; i < connections.size(); i++)
 						{
 							matchIndex.add(0);
-							nextIndex.add(commitIndex + 1);
+							nextIndex.add(log.size());
 						}
 						//Call and empty heart beat
 						append(null);
@@ -138,22 +143,42 @@ public class Server
 				switch(role)
 				{
 				case leader: 
+					//When leader does not receive a message, it will send a heartbeat to follows
 					append(null);
 					break;
 					
 				case follower:
+					//when follower does not receive a heartbeat, they will become a candidate
 					role = Role.candidate;
+					//Update term
 					currentTerm += 1;
 					
+					//vote for self
 					votedFor = myId;
 					votes = 1;
 					
+					//Request votes from everyone else
 					request();
 					
 					break;
 				
 				case candidate: 
-					continue; 
+					
+					//Majority of votes?
+					if(votes > connections.size()/2){
+						role = Role.leader;
+						
+						//initialization for matchindex and next index 
+						matchIndex = new ArrayList<Integer>();
+						nextIndex = new ArrayList<Integer>();
+						for(int i = 0; i < connections.size(); i++)
+						{
+							matchIndex.add(0);
+							nextIndex.add(log.size());
+						}
+						//Call and empty heart beat
+						append(null);
+					}
 					
 				}
 					
@@ -240,6 +265,9 @@ public class Server
 				
 	}
 	
+	/*
+	 * This method handles sending a requestVoteRPC to all servers
+	 */
 	private static void request()
 	{
 		for(int i =0; i < connections.size(); i++)
@@ -247,13 +275,18 @@ public class Server
 			if(i == myId) continue;
 			
 			Connection currentConnection = connections.get(i);
+			int lastLogIndex = log.size() - 1;
 			
-			RequestVote current = new RequestVote(currentTerm, myId, commitIndex, log.get(i).term, 
+			RequestVote current = new RequestVote(currentTerm, myId, lastLogIndex, log.get(lastLogIndex).term, 
 						currentConnection.port, currentConnection.ip.toString());
 			executor.submit(current);
 			
 		}
 	}
+	
+	/*
+	 * This method handles receiving a requestVoteRPC
+	 */
 	
 	private static String handleRequest(Scanner sc)
 	{
@@ -265,24 +298,30 @@ public class Server
 		int prevIndex = Integer.parseInt(sc.next());
 		
 		//Message sent does not line up with current log
-		if((prevIndex != commitIndex) || (log.get(commitIndex).term != prevTerm)) return "false " + currentTerm.toString(); 
+		if(log.get(prevIndex).term != prevTerm) return "false " + currentTerm.toString(); 
 		
 		if((term >= currentTerm) && (votedFor == null))
 		{
-			votedFor = candidateId;
 			updateTerm(term);
+			votedFor = candidateId;
 			return "true " + currentTerm.toString();
 		}
 		
 		else return "false " + currentTerm.toString();	
 	}
 	
+	/*
+	 * This method handles new messages from clients
+	 */
 	private static void handleClient(Scanner sc)
 	{
 		log.add(new LogEntry(currentTerm, sc.next()));
-		nextIndex.set(myId, nextIndex.get(myId) + 1);
+		//Setting personal next index. This is used to reference where the log should be replicated to.
 		
+		nextIndex.set(myId, nextIndex.get(myId) + 1);
 	}
+	
+	
 	public static synchronized void updateTerm(Integer otherTerm)
 	{
 		if(otherTerm > currentTerm)
