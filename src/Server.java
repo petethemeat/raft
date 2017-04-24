@@ -27,8 +27,8 @@ public class Server
 	private static Integer votedFor = null;
 	private static Integer votes = 0;
 	
-	private static Integer commitIndex = null;
-	private static Integer lastApplied = null;
+	private static Integer commitIndex = 0;
+	private static Integer lastApplied = 0;
 	
 	private static ArrayList<LogEntry> log = new ArrayList<>();
 	private static ArrayList<Integer> nextIndex = new ArrayList<>();
@@ -44,6 +44,8 @@ public class Server
 		//TODO read in ip adress and ports for other servers
 		
 		role = Role.follower;	//set initial role to follower
+		log.add(new LogEntry(0, "_"));
+		
 		while(true)
 		{
 			try
@@ -59,30 +61,34 @@ public class Server
 				Socket dataSocket = new Socket();
 				dataSocket = tcpListener.accept();	//Throws exception when waiting to long
 				
+				
+				//Read in message
 				Scanner sc = new Scanner(dataSocket.getInputStream());
+				//Figure out the type of message
 				String token = sc.next();
 				
 				PrintWriter tcpOutput = new PrintWriter(dataSocket.getOutputStream());
 				
+				//handles append message
 				if(token.equals("append"))
 				{
-					String message = handleAppend(sc);
-					
-					
+					String message = handleAppend(sc);	
 					sc.close();
 					tcpOutput.println(message);
 				}
 				
+				//handles requests for votes
 				else if(token.equals("requestVote"))
 				{
 					String message = handleRequest(sc);
-					
 					sc.close();
 					tcpOutput.println(message);
 				}
 				
+				//handles client requests
 				else if(token.equals("client"))
 				{
+					//redirect if not the current leader
 					if(role != Role.leader)
 					{
 						tcpOutput.println(leaderId.toString());
@@ -94,14 +100,28 @@ public class Server
 					
 					sc.close();
 				}
+				
+				//check to see if candidate is now leader
 				if(role == Role.candidate)
 				{
+					//Majority of votes?
 					if(votes > connections.size()/2){
 						role = Role.leader;
+						
+						//initialization for matchindex and next index 
+						matchIndex = new ArrayList<Integer>();
+						nextIndex = new ArrayList<Integer>();
+						for(int i = 0; i < connections.size(); i++)
+						{
+							matchIndex.add(0);
+							nextIndex.add(commitIndex + 1);
+						}
+						//Call and empty heart beat
 						append(null);
 					}
 				}
-				
+				dataSocket.close();
+				tcpListener.close();
 			}
 			catch(InterruptedIOException e)
 			{
@@ -123,10 +143,7 @@ public class Server
 					break;
 				
 				case candidate: 
-					if(votes > connections.size()/2){
-						role = Role.leader;
-						append(null);
-					}
+					continue; 
 					
 				}
 					
@@ -142,6 +159,8 @@ public class Server
 	}
 
 	private static void append(Socket dataSocket) {
+		
+		int localIndex = nextIndex.get(myId);
 		for(int i =0; i < connections.size(); i++)
 		{
 			if(i == myId) continue;
@@ -150,16 +169,16 @@ public class Server
 			LogEntry[] entries = null;
 			int currentIndex = Server.nextIndex.get(i) - 1; //CurrentIndex
 			 
-			if(currentIndex < commitIndex)
+			if(currentIndex < localIndex)
 			{
-				List<LogEntry> sub = log.subList(currentIndex + 1, commitIndex + 1);
+				List<LogEntry> sub = log.subList(currentIndex + 1, localIndex + 1);
 				entries = sub.toArray(new LogEntry[sub.size()]);
 			}
 			
 			Connection currentConnection = connections.get(i);
 			
 			Append current = new Append(currentTerm, myId, currentIndex, log.get(currentIndex).term, commitIndex, entries, 
-					currentConnection.ip.toString(), currentConnection.port, i, dataSocket);
+					currentConnection.ip.toString(), currentConnection.port, i, dataSocket, localIndex);
 			executor.submit(current);
 			
 		}
@@ -180,19 +199,38 @@ public class Server
 		int prevTerm = Integer.parseInt(sc.next());
 		int prevIndex = Integer.parseInt(sc.next());
 		
-		//Message sent does not line up with current log
-		if((prevIndex != commitIndex) || (log.get(commitIndex).term != prevTerm)) return "false " + currentTerm.toString(); 
+		//Message sent is much to far ahead
+		if(prevIndex >= log.size()) return "false " + currentTerm.toString();
+		
+		//Message has wrong term in prevIndex
+		if((log.get(prevIndex).term != prevTerm)) return "false " + currentTerm.toString(); 
+		
 		
 		int leaderCommit = Integer.parseInt(sc.next());
 		
+		int currentIndex = prevIndex + 1;
 		if(sc.hasNext())	//Is there anything to append?
 		{
-			String[] tokens = sc.next().split(":");
-			LogEntry newEntry = new LogEntry(Integer.parseInt(tokens[0]), Integer.parseInt(tokens[1]));
-			log.add(newEntry);	//add new log entries
+			String[] tokens = sc.next().split(";");
+			LogEntry newEntry = new LogEntry(Integer.parseInt(tokens[0]), tokens[1]);
+			
+			//adding new entry to the log
+			if(currentIndex >= log.size()){
+				log.add(newEntry);
+			}
+			//overwriting old entry
+			else
+			{
+				log.set(currentIndex, newEntry);
+			}
+			currentIndex++;//update the current index;
 		}
 		
-		commitIndex = leaderCommit;
+		//If leaderCommit > commitIndex, set commitIndex = min(leaderCommit, index of last new entry
+		if(leaderCommit > commitIndex)
+		{
+			commitIndex = Math.min(leaderCommit, currentIndex);
+		}
 		
 		return "true " + currentTerm.toString();
 				
@@ -237,8 +275,8 @@ public class Server
 	
 	private static void handleClient(Scanner sc)
 	{
-		int newState = Integer.parseInt(sc.next());
-		log.add(new LogEntry(currentTerm, newState));
+		log.add(new LogEntry(currentTerm, sc.next()));
+		nextIndex.set(myId, nextIndex.get(myId) + 1);
 		
 	}
 	public static synchronized void updateTerm(Integer otherTerm)
@@ -251,28 +289,35 @@ public class Server
 		}
 	}
 	
-	public static synchronized Boolean updateNextAndMatch(Boolean success, Integer recipientId, Integer leaderCommit)
+	public static synchronized void updateNextAndMatch(Boolean success, Integer recipientId, Integer localIndex)
 	{
 		if(success)
 		{
-			Server.nextIndex.set(recipientId, leaderCommit + 1);
-			Server.matchIndex.set(recipientId, leaderCommit);
+			Server.nextIndex.set(recipientId, localIndex + 1);
+			Server.matchIndex.set(recipientId, localIndex);
 		}
 		else
 		{
 			int currentIndex = Server.nextIndex.get(recipientId);
 			Server.nextIndex.set(recipientId, currentIndex - 1);
 		}
-		
-		int count = 0;
-		for(Integer index : Server.matchIndex) if(index == leaderCommit) count++;
-		
-		if(count > connections.size()/2) return true;
-		
-		//TODO commit change and send back string response
-		return false;
+	
 	}
 	
+	public static synchronized Boolean checkForCommit(Integer localIndex)
+	{
+		int count = 0;
+		for(Integer index : Server.matchIndex) if(index == localIndex) count++;
+		
+		if(count == connections.size()/2 + 1)
+		{
+			
+			commitIndex = localIndex;
+			return true;
+		}
+		
+		return false;
+	}
 	public static synchronized void updateVotes(Boolean result)
 	{
 		if(result) votes++;

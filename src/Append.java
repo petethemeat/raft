@@ -16,12 +16,13 @@ public class Append implements Runnable{ //not a runnable anymore, make your own
 	private int recipientPort;
 	private int recipientId;
 	private Socket dataSocket;
+	private int localIndex;
 	
 	private int returnTerm; //returned term, for the leader to update itself
 	private Boolean success; //true iff follower contained entry matching prevLogIndex and prevLogTerm
 							//null if not finished
 	public Append(int term, int leaderID, int prevLogIndex, 
-				int prevLogTerm, int leaderCommit, LogEntry[] entries, String recipientIP, int recipientPort, int recipientId, Socket dataSocket)
+				int prevLogTerm, int leaderCommit, LogEntry[] entries, String recipientIP, int recipientPort, int recipientId, Socket dataSocket, int localIndex)
 	{
 		this.term = term;
 		this.leaderID = leaderID;
@@ -33,6 +34,7 @@ public class Append implements Runnable{ //not a runnable anymore, make your own
 		this.recipientPort = recipientPort;
 		this.recipientId = recipientId;
 		this.dataSocket = dataSocket;
+		this.localIndex = localIndex;
 		
 	}
 	
@@ -55,8 +57,11 @@ public class Append implements Runnable{ //not a runnable anymore, make your own
 			success = sc.nextBoolean();
 			returnTerm = sc.nextInt();
 			
-			if(Server.updateNextAndMatch(success, recipientId, leaderCommit) && dataSocket != null)
+			Server.updateNextAndMatch(success, recipientId, leaderCommit);
+			if(Server.checkForCommit(localIndex)) //TODO fix this
 			{
+				//TODO run state machine from lastapplied to commitindex
+				
 				
 				PrintWriter out = new PrintWriter(dataSocket.getOutputStream());
 				out.println("success");
