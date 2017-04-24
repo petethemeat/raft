@@ -1,3 +1,5 @@
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.PrintWriter;
@@ -48,12 +50,35 @@ public class Server
 	
 	public static void main(String[] args)
 	{
-		
-		
 		Hashtable<String, Integer> input = new Hashtable<String,Integer>();
-		//TODO read in inventory file
+		
+		try {
+			Scanner invSc = new Scanner(new File(args[0]));
+			while(invSc.hasNext())
+			{
+				String[] parts = invSc.nextLine().split(" ");
+				input.put(parts[0], Integer.parseInt(parts[1]));
+			}
+			invSc.close();
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
 		inventory = new Inventory(input);
 		
+		try {
+			Scanner ipSc = new Scanner(new File(args[1]));
+			myId = Integer.parseInt(ipSc.next());
+			while(ipSc.hasNext())
+			{
+				String[] parts = ipSc.nextLine().split(":");
+				connections.add(new Connection(Integer.parseInt(parts[0]), Integer.parseInt(parts[1])));
+			}
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		//TODO read in ip adress and ports for other servers
 		
 		//TODO set personal id
@@ -198,7 +223,8 @@ public class Server
 
 	private static void append(Socket dataSocket) {
 		
-		int localIndex = nextIndex.get(myId);
+		//index of most recently
+		int localIndex = nextIndex.get(myId) - 1;
 		for(int i =0; i < connections.size(); i++)
 		{
 			if(i == myId) continue;
@@ -402,21 +428,7 @@ public class Server
 		}
 		return reply;
 	}
-	
-	
 
-	
-	public class Connection
-	{
-		public Integer ip;
-		public Integer port;
-		
-		public Connection(int ip, int port)
-		{
-			this.ip = ip;
-			this.port = port;
-		}
-	}
 	
 	
 
