@@ -52,9 +52,9 @@ public class RequestVote implements Runnable { // 5.2
 				sock = new Socket();
 				sock.setSoTimeout(30000);
 
-				System.out.println("[DEBUG]attempting to connect");
+//				System.out.println("[DEBUG]attempting to connect");
 				sock.connect(new InetSocketAddress(recipientIP, recipientPort), 100);
-				System.out.println("[DEBUG]got connection");
+//				System.out.println("[DEBUG]got connection");
 				PrintStream pout = new PrintStream(sock.getOutputStream(), true);
 				pout.flush();
 				pout.println(message);
@@ -80,12 +80,8 @@ public class RequestVote implements Runnable { // 5.2
 				System.out.println("\n[DEBUG] sent done message to " + recipientIP + ": " + message);
 				return;
 				// TODO crash after sending first one
-			} catch (SocketException e) {
+			} catch (Exception e) {
 				// TODO Auto-generated catch block
-				System.out.println("Server at IP " + recipientIP + " has experienced a SocketException.");
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				System.out.println("Server at IP " + recipientIP + " has experienced an IOException.");
 			}
 		}
 

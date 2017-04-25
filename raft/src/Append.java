@@ -45,7 +45,7 @@ public class Append implements Runnable{ //not a runnable anymore, make your own
 		System.out.println("starting appendRPC");
 		//Implementation of retry logic
 		Socket sock = null;
-		while(true)
+		while(Server.getTerm() == term)
 		{
 			List<LogEntry> subEntries = entries.subList(prevLogIndex + 1, localIndex + 1);
 			sock = new Socket();

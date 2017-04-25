@@ -133,8 +133,17 @@ public class Server
 				//Read in message
 				Scanner sc = new Scanner(dataSocket.getInputStream());
 				//Figure out the type of message
-				String token = sc.next();
-				
+				String token = null;
+				if(sc.hasNext())
+				{
+					token = sc.next();
+				}
+				else
+				{
+					sc.close();
+					dataSocket.close();
+					continue;
+				}
 				PrintStream tcpOutput = new PrintStream(dataSocket.getOutputStream(), true);
 
 				//handles append message
@@ -161,12 +170,13 @@ public class Server
 					//redirect if not the current leader
 					if(role != Role.leader)
 					{
-						tcpOutput.println("fail" + leaderId.toString());
+						tcpOutput.println("fail " + leaderId.toString());
 						continue;
 					}
 
 					handleClient(sc);
 					append(dataSocket);
+					System.out.println("Append succeeded");
 					
 					sc.close();
 				}
@@ -188,6 +198,7 @@ public class Server
 						}
 						//Call and empty heart beat
 						append(null);
+						System.out.println("Append succeeded");
 					}
 				}
 				dataSocket.close();
@@ -201,6 +212,7 @@ public class Server
 				case leader: 
 					//When leader does not receive a message, it will send a heartbeat to follows
 					append(null);
+					System.out.println("Append succeeded");
 					break;
 					
 				case follower:
@@ -235,6 +247,7 @@ public class Server
 						}
 						//Call and empty heart beat
 						append(null);
+						System.out.println("Append succeeded");
 					}
 					
 					else
@@ -289,12 +302,13 @@ public class Server
 	
 	private static String handleAppend(Scanner sc)
 	{
+		sc = new Scanner(sc.nextLine());
 		System.out.println("I received a heartbeat");
 		int term = Integer.parseInt(sc.next());
 		if(term < currentTerm) return "false " + currentTerm.toString(); //Message sent from out of date leader
 		
 		int leader = Integer.parseInt(sc.next()); //Message sent from new term
-		if(term > currentTerm)
+		if(term >= currentTerm)
 		{
 			updateTerm(term);
 			leaderId = leader;
@@ -371,7 +385,10 @@ public class Server
 		if(term < currentTerm) {
 			return "false " + currentTerm.toString();
 		}
-		
+		if(term > currentTerm)
+		{
+			updateTerm(term);
+		}
 		int candidateId = Integer.parseInt(sc.next());
 		int prevTerm = Integer.parseInt(sc.next());
 		int prevIndex = Integer.parseInt(sc.next());
@@ -379,7 +396,7 @@ public class Server
 		//Message sent does not line up with current log
 		if(log.get(prevIndex).term != prevTerm) return "false " + currentTerm.toString(); 
 		
-		if((term >= currentTerm) && (votedFor == null))
+		if(votedFor == null)
 		{
 			updateTerm(term);
 			votedFor = candidateId;
