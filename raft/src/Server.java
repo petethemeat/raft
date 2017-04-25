@@ -47,6 +47,7 @@ public class Server
 	
 	private static final int minTimeOut = 6000;
 	private static final int maxTimeOut = 10000;
+	public static int counter = 0;
 	
 	
 	
@@ -156,6 +157,8 @@ public class Server
 					tcpOutput.close();
 
 					sc.close();
+					dataSocket.close();
+
 				}
 				
 				//handles requests for votes
@@ -166,6 +169,8 @@ public class Server
 					tcpOutput.println(message);
 					tcpOutput.close();
 					sc.close();
+					dataSocket.close();
+
 				}
 				
 				//handles client requests
@@ -178,11 +183,10 @@ public class Server
 						continue;
 					}
 
-					handleClient(sc);
+					handleClient(sc.next());
 					append(dataSocket);
 					System.out.println("Append succeeded");
 					
-					sc.close();
 				}
 				
 				//check to see if candidate is now leader
@@ -191,7 +195,7 @@ public class Server
 					//Majority of votes?
 					if(votes > connections.size()/2){
 						role = Role.leader;
-						
+						counter = 0;
 						//initialization for matchindex and next index 
 						matchIndex = new ArrayList<Integer>();
 						nextIndex = new ArrayList<Integer>();
@@ -201,11 +205,12 @@ public class Server
 							nextIndex.add(log.size());
 						}
 						//Call and empty heart beat
+						handleClient("HelloWorld");
+						
 						append(null);
 						System.out.println(" ");
 					}
 				}
-				dataSocket.close();
 				
 
 			}
@@ -240,6 +245,7 @@ public class Server
 					System.out.println(votes);
 					if(votes > connections.size()/2){
 						role = Role.leader;
+						counter = 0;
 						System.out.println("I'm the leader");
 						//initialization for matchindex and next index 
 						matchIndex = new ArrayList<Integer>();
@@ -250,6 +256,7 @@ public class Server
 							nextIndex.add(log.size());
 						}
 						//Call and empty heart beat
+						handleClient("HelloWorld");
 						append(null);
 						System.out.println(" " );
 					}
@@ -287,6 +294,9 @@ public class Server
 		System.out.println("I'm sending a heartbeat");
 		//index of most recently
 		int localIndex = nextIndex.get(myId) - 1;
+		
+		counter++;
+
 		for(int i =0; i < connections.size(); i++)
 		{
 			if(i == myId) continue;
@@ -297,8 +307,11 @@ public class Server
 			Connection currentConnection = connections.get(i);
 			
 			//start append RPC
+			if(log.size() <= currentIndex){
+				currentIndex  = currentIndex;
+			}
 			Append current = new Append(currentTerm, myId, currentIndex, log.get(currentIndex).term, commitIndex, log, 
-					currentConnection.ip, currentConnection.port, i, dataSocket, localIndex);
+					currentConnection.ip, currentConnection.port, i, dataSocket, localIndex, counter);
 			Thread t = new Thread(current);
 			t.start();
 			
@@ -400,7 +413,7 @@ public class Server
 		int prevIndex = Integer.parseInt(sc.next());
 		
 		//Message sent does not line up with current log
-		if(log.get(prevIndex).term != prevTerm) return "false " + currentTerm.toString(); 
+		if(prevIndex >= log.size() || log.get(prevIndex).term != prevTerm) return "false " + currentTerm.toString(); 
 		
 		if(votedFor == null)
 		{
@@ -415,12 +428,14 @@ public class Server
 	/*
 	 * This method handles new messages from clients
 	 */
-	private static void handleClient(Scanner sc)
+	private static void handleClient(String message)
 	{
-		log.add(new LogEntry(currentTerm, sc.next()));
+		log.add(new LogEntry(currentTerm, message));
 		//Setting personal next index. This is used to reference where the log should be replicated to.
 		
-		nextIndex.set(myId, nextIndex.get(myId) + 1);
+		int next = nextIndex.get(myId);
+		matchIndex.set(myId, next);
+		nextIndex.set(myId, next + 1);
 	}
 	
 	
@@ -454,7 +469,7 @@ public class Server
 		int count = 0;
 		for(Integer index : Server.matchIndex) if(index == localIndex) count++;
 		
-		if(count == connections.size()/2 + 1)
+		if(count >= connections.size()/2 + 1)
 		{
 			
 			commitIndex = localIndex;
