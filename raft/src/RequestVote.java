@@ -60,14 +60,16 @@ public class RequestVote implements Runnable { // 5.2
 				pout.println(message);
 
 				Scanner sc = new Scanner(sock.getInputStream());
-				while (!sc.hasNextLine()) {
-				}
+				//while (!sc.hasNextLine()) {
+				//}
 
 				// expects single line response, in space-delimited form:
 				// voteGranted returnTerm
-				while (!sc.hasNext());
+				while (!sc.hasNext()){}
 //				String one = sc.next();
 				voteGranted = sc.nextBoolean();
+				returnTerm = sc.nextInt();
+				
 				System.out.println("RequestVote: " + voteGranted);
 				System.out.println(returnTerm);
 
@@ -77,7 +79,7 @@ public class RequestVote implements Runnable { // 5.2
 				sc.close();
 				sock.close();
 				System.out.println("\n[DEBUG] sent done message to " + recipientIP + ": " + message);
-				return;
+				break;
 				// TODO crash after sending first one
 
 			} catch (SocketException e) {
