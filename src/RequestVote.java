@@ -43,38 +43,40 @@ public class RequestVote implements Runnable { // 5.2
 		String message = "requestVote " + term + " " + candidateId + " " + lastLogIndex + " " + lastLogTerm;
 
 		// Send request to specified server
-		System.out.println("[DEBUG]server at IP " + recipientIP);
+		//System.out.println("[DEBUG]server at IP " + recipientIP);
 		Socket sock = new Socket();
 		while (Server.getTerm() == term) {
 			try {
 				sock = new Socket();
 				sock.setSoTimeout(30000);
-				System.out.println("[DEBUG]attempting to connect");
+				//System.out.println("[DEBUG]attempting to connect");
 				sock.connect(new InetSocketAddress(recipientIP, recipientPort), 100);
-				System.out.println("[DEBUG]got connection");
+				//System.out.println("[DEBUG]got connection");
 				PrintStream pout = new PrintStream(sock.getOutputStream());
+				Scanner sc = new Scanner(sock.getInputStream());
+				
 				pout.println(message);
 	
-				Scanner sc = new Scanner(sock.getInputStream());
 
 				// expects single line response, in space-delimited form:
 				// voteGranted returnTerm
+				System.out.println("DEBUG sent request vote message.");
 				while(!sc.hasNext());
 				String one = sc.next();
-	
+				System.out.println("DEBUG recieved response to request vote.");
 				Server.updateVotes(voteGranted);
 				Server.updateTerm(returnTerm);
 	
 				pout.close();
 				sc.close();
 				sock.close();
-				System.out.println("\n[DEBUG] sent done message to " + recipientIP + ": " + message);
+				//System.out.println("\n[DEBUG] sent done message to " + recipientIP + ": " + message);
 				return;
 				// TODO crash after sending first one
 			} catch (Exception e) {
 	
 				/* time out on receiving the response as */
-				System.out.println("Server at IP " + recipientIP + " has timed out or experienced a problem.");
+				//System.out.println("Server at IP " + recipientIP + " has timed out or experienced a problem.");
 			}
 		}
 

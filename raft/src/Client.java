@@ -1,3 +1,5 @@
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
@@ -22,7 +24,13 @@ public class Client {
 	static ArrayList<Integer> ports = null;
 	
 	public static void main(String[] args) {
-		Scanner sc = new Scanner(System.in);
+		Scanner sc = null;
+		try {
+			sc = new Scanner(new File(args[0]));
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		numServer = sc.nextInt();
 		sc.nextLine();
 		ipAddresses = new ArrayList<String>();
@@ -35,12 +43,13 @@ public class Client {
 			ipAddresses.add(ipPort[0]);
 			ports.add(Integer.parseInt(ipPort[1]));
 		}
-
+		sc.close();
+		sc = new Scanner(System.in);
 		while (sc.hasNextLine()) {
 			String cmd = sc.nextLine();
 			cmd = "client " + cmd;
 			String[] tokens = cmd.split(" ");
-			if (tokens[0].equals("purchase") || tokens[0].equals("cancel") || tokens[0].equals("list") || tokens[0].equals("search")) {
+			if (tokens[1].equals("purchase") || tokens[1].equals("cancel") || tokens[1].equals("list") || tokens[1].equals("search")) {
 				// send appropriate command to the server and display the
 				// appropriate responses form the server
 				for(int i = 0; true; i = (i+1)%numServer){
@@ -128,18 +137,18 @@ public class Client {
 	private static int getTcpSocket() {
 		for (int i = 0; true; i = (i + 1) % numServer) {
 			try {
-				//System.out.println("[DEBUG]trying server " + (i));
+				System.out.println("[DEBUG]trying server " + (i));
 				tcpSocket = new Socket();
 				tcpSocket.setSoTimeout(500);
 				tcpSocket.connect(new InetSocketAddress(ipAddresses.get(i), ports.get(i)), 100);
 				outStream = new PrintStream(tcpSocket.getOutputStream());
 				inStream = new Scanner(tcpSocket.getInputStream());
-				//System.out.println("[DEBUG]successful connection");
+				System.out.println("[DEBUG]successful connection");
 				return i;
 			} catch (UnknownHostException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
-				//System.out.println("[DEBUG]server " + i + " timed out");
+				System.out.println("[DEBUG]server " + i + " timed out");
 				continue;
 			}
 		}
