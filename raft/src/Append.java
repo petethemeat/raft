@@ -42,7 +42,7 @@ public class Append implements Runnable{ //not a runnable anymore, make your own
 	
 	//Attempts to send once, with timeout of one second
 	public void run() { 
-		
+		System.out.println("starting appendRPC");
 		//Implementation of retry logic
 		while(true)
 		{

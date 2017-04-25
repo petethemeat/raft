@@ -1,3 +1,5 @@
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
@@ -22,7 +24,13 @@ public class Client {
 	static ArrayList<Integer> ports = null;
 	
 	public static void main(String[] args) {
-		Scanner sc = new Scanner(System.in);
+		Scanner sc = null;
+		try {
+			sc = new Scanner(new File(args[0]));
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		numServer = sc.nextInt();
 		sc.nextLine();
 		ipAddresses = new ArrayList<String>();
@@ -35,7 +43,8 @@ public class Client {
 			ipAddresses.add(ipPort[0]);
 			ports.add(Integer.parseInt(ipPort[1]));
 		}
-
+		sc.close();
+		sc = new Scanner(System.in);
 		while (sc.hasNextLine()) {
 			String cmd = sc.nextLine();
 			cmd = "client " + cmd;

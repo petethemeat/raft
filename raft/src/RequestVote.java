@@ -1,6 +1,10 @@
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Scanner;
 
 /*
@@ -45,34 +49,39 @@ public class RequestVote implements Runnable { // 5.2
 		Socket sock = new Socket();
 		while (Server.getTerm() == term) {
 			try {
-				sock.setSoTimeout(100);
+				sock = new Socket();
+				sock.setSoTimeout(30000);
 				System.out.println("[DEBUG]attempting to connect");
 				sock.connect(new InetSocketAddress(recipientIP, recipientPort), 100);
 				System.out.println("[DEBUG]got connection");
 				PrintStream pout = new PrintStream(sock.getOutputStream());
 				pout.println(message);
-	
+
 				Scanner sc = new Scanner(sock.getInputStream());
-				while (!sc.hasNextLine()) {
-				}
+
 				// expects single line response, in space-delimited form:
 				// voteGranted returnTerm
+				while (!sc.hasNext());
+//				String one = sc.next();
 				voteGranted = sc.nextBoolean();
+				System.out.println("RequestVote: " + voteGranted);
 				returnTerm = sc.nextInt();
-	
+				System.out.println(returnTerm);
+
 				Server.updateVotes(voteGranted);
 				Server.updateTerm(returnTerm);
-	
 				pout.close();
 				sc.close();
 				sock.close();
 				System.out.println("\n[DEBUG] sent done message to " + recipientIP + ": " + message);
 				return;
 				// TODO crash after sending first one
-			} catch (Exception e) {
-	
-				/* time out on receiving the response as */
-				System.out.println("Server at IP " + recipientIP + " has timed out or experienced a problem.");
+			} catch (SocketException e) {
+				// TODO Auto-generated catch block
+				System.out.println("Server at IP " + recipientIP + " has experienced a SocketException.");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				System.out.println("Server at IP " + recipientIP + " has experienced an IOException.");
 			}
 		}
 

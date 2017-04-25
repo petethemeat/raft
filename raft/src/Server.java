@@ -2,6 +2,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -44,13 +45,20 @@ public class Server
 	
 	public static ExecutorService executor = Executors.newFixedThreadPool(10);
 	
-	private static final int minTimeOut = 300;
-	private static final int maxTimeOut = 500;
+	private static final int minTimeOut = 6000;
+	private static final int maxTimeOut = 10000;
 	
 	
 	
 	public static void main(String[] args)
 	{
+		try {
+			System.out.println("Starting server in ten seconds");
+			Thread.sleep(10000);
+		} catch (InterruptedException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
 		Hashtable<String, Integer> input = new Hashtable<String,Integer>();
 		
 		try {
@@ -76,6 +84,7 @@ public class Server
 				String[] parts = ipSc.nextLine().split(":");
 				connections.add(new Connection(parts[0], Integer.parseInt(parts[1])));
 			}
+			ipSc.close();
 		} catch (FileNotFoundException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -99,9 +108,11 @@ public class Server
 		{
 			e.printStackTrace();
 		}
+		System.out.println("Server ID: " + myId);
 		
 		while(true)
 		{
+			System.out.println(role.toString() + " " + currentTerm);
 			try
 			{
 				if(role == Role.follower)
@@ -109,7 +120,11 @@ public class Server
 					tcpListener.setSoTimeout(ThreadLocalRandom.current().nextInt(minTimeOut, maxTimeOut + 1)); 
 				}
 				
-				else tcpListener.setSoTimeout(100); //needs to be shorter for candidates and leaders
+
+				else tcpListener.setSoTimeout(3000); //needs to be shorter for candidates and leaders
+
+
+
 				
 				Socket dataSocket = new Socket();
 				dataSocket = tcpListener.accept();	//Throws exception when waiting to long
@@ -120,8 +135,8 @@ public class Server
 				//Figure out the type of message
 				String token = sc.next();
 				
-				PrintWriter tcpOutput = new PrintWriter(dataSocket.getOutputStream());
-				
+				PrintStream tcpOutput = new PrintStream(dataSocket.getOutputStream(), true);
+				System.out.println(token);
 				//handles append message
 				if(token.equals("append"))
 				{
@@ -134,8 +149,12 @@ public class Server
 				else if(token.equals("requestVote"))
 				{
 					String message = handleRequest(sc);
-					sc.close();
+//					sc.close();
+					System.out.println(message);
+					tcpOutput.flush();
 					tcpOutput.println(message);
+					tcpOutput.flush();
+					tcpOutput.close();
 				}
 				
 				//handles client requests
@@ -199,14 +218,15 @@ public class Server
 					//Request votes from everyone else
 					request();
 					
-					break;
+
 				
 				case candidate: 
 					
 					//Majority of votes?
+					System.out.println(votes);
 					if(votes > connections.size()/2){
 						role = Role.leader;
-						
+						System.out.println("I'm the leader");
 						//initialization for matchindex and next index 
 						matchIndex = new ArrayList<Integer>();
 						nextIndex = new ArrayList<Integer>();
@@ -237,7 +257,7 @@ public class Server
 	
 
 	private static void append(Socket dataSocket) {
-		
+		System.out.println("I'm sending a heartbeat");
 		//index of most recently
 		int localIndex = nextIndex.get(myId) - 1;
 		for(int i =0; i < connections.size(); i++)
@@ -259,6 +279,7 @@ public class Server
 	
 	private static String handleAppend(Scanner sc)
 	{
+		System.out.println("I received a heartbeat");
 		int term = Integer.parseInt(sc.next());
 		if(term < currentTerm) return "false " + currentTerm.toString(); //Message sent from out of date leader
 		
@@ -314,6 +335,7 @@ public class Server
 	 */
 	private static void request()
 	{
+		System.out.println("I'm sending vote requests");
 		for(int i =0; i < connections.size(); i++)
 		{
 			if(i == myId) continue;
@@ -334,8 +356,11 @@ public class Server
 	
 	private static String handleRequest(Scanner sc)
 	{
+		System.out.println("I'm handling a vote request");
 		int term = Integer.parseInt(sc.next());
-		if(term < currentTerm) return "false " + currentTerm.toString();
+		if(term < currentTerm) {
+			return "false " + currentTerm.toString();
+		}
 		
 		int candidateId = Integer.parseInt(sc.next());
 		int prevTerm = Integer.parseInt(sc.next());
@@ -408,6 +433,7 @@ public class Server
 	public static synchronized void updateVotes(Boolean result)
 	{
 		if(result) votes++;
+		System.out.println("Votes: " + votes);
 	}
 	
 	
