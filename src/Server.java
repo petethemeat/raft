@@ -110,7 +110,7 @@ public class Server
 		
 		while(true)
 		{
-			System.out.println(role.toString() + " " + currentTerm);
+			//System.out.println(role.toString() + " " + currentTerm);
 			try
 			{
 				if(role == Role.follower)
@@ -131,10 +131,10 @@ public class Server
 				//Read in message
 				Scanner sc = new Scanner(dataSocket.getInputStream());
 				//Figure out the type of message
-				String token = sc.next();
-				
 				PrintWriter tcpOutput = new PrintWriter(dataSocket.getOutputStream());
-				System.out.println(token);
+				String token = sc.next();
+			
+				//System.out.println(token);
 				//handles append message
 				if(token.equals("append"))
 				{
@@ -220,7 +220,7 @@ public class Server
 				case candidate: 
 					
 					//Majority of votes?
-					System.out.println(votes);
+					//System.out.println(votes);
 					if(votes > connections.size()/2){
 						role = Role.leader;
 						System.out.println("I'm the leader");
