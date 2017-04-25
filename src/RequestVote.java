@@ -1,3 +1,5 @@
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -45,7 +47,8 @@ public class RequestVote implements Runnable { // 5.2
 		Socket sock = new Socket();
 		while (Server.getTerm() == term) {
 			try {
-				sock.setSoTimeout(100);
+				sock = new Socket();
+				sock.setSoTimeout(30000);
 				System.out.println("[DEBUG]attempting to connect");
 				sock.connect(new InetSocketAddress(recipientIP, recipientPort), 100);
 				System.out.println("[DEBUG]got connection");
@@ -53,12 +56,11 @@ public class RequestVote implements Runnable { // 5.2
 				pout.println(message);
 	
 				Scanner sc = new Scanner(sock.getInputStream());
-				while (!sc.hasNextLine()) {
-				}
+
 				// expects single line response, in space-delimited form:
 				// voteGranted returnTerm
-				voteGranted = sc.nextBoolean();
-				returnTerm = sc.nextInt();
+				while(!sc.hasNext());
+				String one = sc.next();
 	
 				Server.updateVotes(voteGranted);
 				Server.updateTerm(returnTerm);
