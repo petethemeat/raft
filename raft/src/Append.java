@@ -61,6 +61,7 @@ public class Append implements Runnable{ //not a runnable anymore, make your own
 				
 				//expects single line response, in space-delimited form: success returnTerm
 				success = sc.nextBoolean();
+				System.out.println(success);
 				returnTerm = sc.nextInt();
 				
 				Server.updateNextAndMatch(success, recipientId, leaderCommit);

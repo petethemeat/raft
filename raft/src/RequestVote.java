@@ -76,8 +76,13 @@ public class RequestVote implements Runnable { // 5.2
 	
 				/* time out on receiving the response as */
 				System.out.println("Server at IP " + recipientIP + " has timed out or experienced a problem.");
+				continue;
 			}
+
+			
 		}
+		System.out.println("while loop terminated");
+		return;
 
 	}
 
