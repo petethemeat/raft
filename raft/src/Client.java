@@ -31,17 +31,18 @@ public class Client {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		numServer = sc.nextInt();
 		sc.nextLine();
+		numServer = 0;
 		ipAddresses = new ArrayList<String>();
 		ports = new ArrayList<Integer>();
 
-		for (int i = 0; i < numServer; i++) {
+		while (sc.hasNextLine()) {
 			// parse inputs to get the ips and ports of servers
 			String port = sc.nextLine();
 			String[] ipPort = port.split(":");
 			ipAddresses.add(ipPort[0]);
 			ports.add(Integer.parseInt(ipPort[1]));
+			numServer++;
 		}
 		sc.close();
 		sc = new Scanner(System.in);
@@ -140,7 +141,7 @@ public class Client {
 				System.out.println("[DEBUG]trying server " + (i));
 				tcpSocket = new Socket();
 				tcpSocket.setSoTimeout(500);
-				tcpSocket.connect(new InetSocketAddress(ipAddresses.get(i), ports.get(i)), 100);
+				tcpSocket.connect(new InetSocketAddress(ipAddresses.get(i), ports.get(i)), 500);
 				outStream = new PrintStream(tcpSocket.getOutputStream());
 				inStream = new Scanner(tcpSocket.getInputStream());
 				System.out.println("[DEBUG]successful connection");

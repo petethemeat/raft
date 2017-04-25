@@ -80,10 +80,19 @@ public class RequestVote implements Runnable { // 5.2
 				System.out.println("\n[DEBUG] sent done message to " + recipientIP + ": " + message);
 				return;
 				// TODO crash after sending first one
-			} catch (Exception e) {
+			} catch (SocketException e) {
 				// TODO Auto-generated catch block
+//				System.out.println("Server at IP " + recipientIP + " has experienced a SocketException.");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+//				System.out.println("Server at IP " + recipientIP + " has experienced an IOException.");
+
 			}
+
+			
 		}
+		System.out.println("while loop terminated");
+		return;
 
 	}
 

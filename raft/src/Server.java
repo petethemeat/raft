@@ -150,7 +150,11 @@ public class Server
 				if(token.equals("append"))
 				{
 					String message = handleAppend(sc);
-					tcpOutput.println(message);	
+
+					tcpOutput.println(message);
+					tcpOutput.flush();
+					tcpOutput.close();
+
 					sc.close();
 				}
 				
@@ -198,7 +202,7 @@ public class Server
 						}
 						//Call and empty heart beat
 						append(null);
-						System.out.println("Append succeeded");
+						System.out.println(" ");
 					}
 				}
 				dataSocket.close();
@@ -247,7 +251,7 @@ public class Server
 						}
 						//Call and empty heart beat
 						append(null);
-						System.out.println("Append succeeded");
+						System.out.println(" " );
 					}
 					
 					else
@@ -295,7 +299,8 @@ public class Server
 			//start append RPC
 			Append current = new Append(currentTerm, myId, currentIndex, log.get(currentIndex).term, commitIndex, log, 
 					currentConnection.ip, currentConnection.port, i, dataSocket, localIndex);
-			executor.submit(current);
+			Thread t = new Thread(current);
+			t.start();
 			
 		}
 	}
@@ -304,6 +309,7 @@ public class Server
 	{
 		sc = new Scanner(sc.nextLine());
 		System.out.println("I received a heartbeat");
+		
 		int term = Integer.parseInt(sc.next());
 		if(term < currentTerm) return "false " + currentTerm.toString(); //Message sent from out of date leader
 		
@@ -369,8 +375,8 @@ public class Server
 			
 			RequestVote current = new RequestVote(currentTerm, myId, lastLogIndex, log.get(lastLogIndex).term, 
 						currentConnection.port, currentConnection.ip);
-			executor.submit(current);
-			
+			Thread t = new Thread(current);
+			t.start();			
 		}
 	}
 	
