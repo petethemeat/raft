@@ -49,7 +49,7 @@ public class Client {
 			String cmd = sc.nextLine();
 			cmd = "client " + cmd;
 			String[] tokens = cmd.split(" ");
-			if (tokens[0].equals("purchase") || tokens[0].equals("cancel") || tokens[0].equals("list") || tokens[0].equals("search")) {
+			if (tokens[1].equals("purchase") || tokens[1].equals("cancel") || tokens[1].equals("list") || tokens[1].equals("search")) {
 				// send appropriate command to the server and display the
 				// appropriate responses form the server
 				for(int i = 0; true; i = (i+1)%numServer){
@@ -137,18 +137,18 @@ public class Client {
 	private static int getTcpSocket() {
 		for (int i = 0; true; i = (i + 1) % numServer) {
 			try {
-				//System.out.println("[DEBUG]trying server " + (i));
+				System.out.println("[DEBUG]trying server " + (i));
 				tcpSocket = new Socket();
 				tcpSocket.setSoTimeout(500);
 				tcpSocket.connect(new InetSocketAddress(ipAddresses.get(i), ports.get(i)), 100);
 				outStream = new PrintStream(tcpSocket.getOutputStream());
 				inStream = new Scanner(tcpSocket.getInputStream());
-				//System.out.println("[DEBUG]successful connection");
+				System.out.println("[DEBUG]successful connection");
 				return i;
 			} catch (UnknownHostException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
-				//System.out.println("[DEBUG]server " + i + " timed out");
+				System.out.println("[DEBUG]server " + i + " timed out");
 				continue;
 			}
 		}

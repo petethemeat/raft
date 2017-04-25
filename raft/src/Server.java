@@ -140,9 +140,9 @@ public class Server
 				//handles append message
 				if(token.equals("append"))
 				{
-					String message = handleAppend(sc);	
+					String message = handleAppend(sc);
+					tcpOutput.println(message);	
 					sc.close();
-					tcpOutput.println(message);
 				}
 				
 				//handles requests for votes
