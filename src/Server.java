@@ -104,12 +104,12 @@ public class Server
 		{
 			try
 			{
-				if(role != Role.leader)
+				if(role == Role.follower)
 				{
 					tcpListener.setSoTimeout(ThreadLocalRandom.current().nextInt(minTimeOut, maxTimeOut + 1)); 
 				}
 				
-				else tcpListener.setSoTimeout(150); //needs to be shorter for candidates and leaders
+				else tcpListener.setSoTimeout(100); //needs to be shorter for candidates and leaders
 				
 				Socket dataSocket = new Socket();
 				dataSocket = tcpListener.accept();	//Throws exception when waiting to long
@@ -144,7 +144,7 @@ public class Server
 					//redirect if not the current leader
 					if(role != Role.leader)
 					{
-						tcpOutput.println("fail " + leaderId.toString());
+						tcpOutput.println("fail" + leaderId.toString());
 						continue;
 					}
 
@@ -199,7 +199,7 @@ public class Server
 					//Request votes from everyone else
 					request();
 					
-					continue;
+					break;
 				
 				case candidate: 
 					
@@ -217,17 +217,6 @@ public class Server
 						}
 						//Call and empty heart beat
 						append(null);
-					}
-					else
-					{
-						currentTerm += 1;
-						votedFor = myId;
-						votes = 1;
-						
-						//request bontes from everyone else
-						request();
-						
-						continue;
 					}
 					
 				} 
