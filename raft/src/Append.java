@@ -44,16 +44,16 @@ public class Append implements Runnable{ //not a runnable anymore, make your own
 	public void run() { 
 		
 		//Implementation of retry logic
+		Socket sock = null;
 		while(true)
 		{
 			List<LogEntry> subEntries = entries.subList(prevLogIndex + 1, localIndex + 1);
-			Socket sock = new Socket();
+			sock = new Socket();
 			String message = "append " + term + " " + leaderID + " " + prevLogIndex + " " + prevLogTerm + " " + leaderCommit;
 			for(int i = 0; i < subEntries.size(); ++i){
 				message = message + " " + subEntries.get(i).toString();
 			}
 			try{
-				sock.setSoTimeout(1000);
 				sock.connect(new InetSocketAddress(recipientIP, recipientPort), 1000);
 				PrintStream pout = new PrintStream(sock.getOutputStream());
 				pout.println(message);

@@ -42,19 +42,22 @@ public class RequestVote implements Runnable { // 5.2
 
 		// Send request to specified server
 		System.out.println("[DEBUG]server at IP " + recipientIP);
-		Socket sock = new Socket();
+		Socket sock = null;
 		while (Server.getTerm() == term) {
 			try {
-				sock.setSoTimeout(100);
-				System.out.println("[DEBUG]attempting to connect");
+				sock = new Socket();
+				sock.setSoTimeout(30000);
+				//System.out.println("[DEBUG]attempting to connect");
 				sock.connect(new InetSocketAddress(recipientIP, recipientPort), 100);
-				System.out.println("[DEBUG]got connection");
-				PrintStream pout = new PrintStream(sock.getOutputStream());
+				//System.out.println("[DEBUG]got connection");
+				PrintStream pout = new PrintStream(sock.getOutputStream(), true);
+				pout.flush();
 				pout.println(message);
-	
+				
 				Scanner sc = new Scanner(sock.getInputStream());
 				while (!sc.hasNextLine()) {
 				}
+				System.out.println("GOt past");
 				// expects single line response, in space-delimited form:
 				// voteGranted returnTerm
 				voteGranted = sc.nextBoolean();

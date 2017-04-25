@@ -2,6 +2,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -51,6 +52,13 @@ public class Server
 	
 	public static void main(String[] args)
 	{
+		System.out.println("sleep");
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
 		Hashtable<String, Integer> input = new Hashtable<String,Integer>();
 		
 		try {
@@ -120,7 +128,7 @@ public class Server
 				//Figure out the type of message
 				String token = sc.next();
 				
-				PrintWriter tcpOutput = new PrintWriter(dataSocket.getOutputStream());
+				PrintStream tcpOutput = new PrintStream(dataSocket.getOutputStream(), true);
 				
 				//handles append message
 				if(token.equals("append"))
@@ -134,8 +142,10 @@ public class Server
 				else if(token.equals("requestVote"))
 				{
 					String message = handleRequest(sc);
-					sc.close();
+					tcpOutput.flush();
 					tcpOutput.println(message);
+					tcpOutput.close();
+					sc.close();
 				}
 				
 				//handles client requests
@@ -173,8 +183,8 @@ public class Server
 						append(null);
 					}
 				}
-				
 				dataSocket.close();
+				
 
 			}
 			catch(InterruptedIOException e)
@@ -217,6 +227,18 @@ public class Server
 						}
 						//Call and empty heart beat
 						append(null);
+					}
+					
+					else
+					{
+						currentTerm += 1;
+						
+						votedFor = myId;
+						votes = 1;
+						
+						request();
+						
+						break;
 					}
 					
 				} 
