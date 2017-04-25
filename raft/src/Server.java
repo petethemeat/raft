@@ -273,11 +273,7 @@ public class Server
 	
 
 	private static void append(Socket dataSocket) {
-<<<<<<< HEAD
-		System.out.println("sending a heartbeat");
-=======
 		System.out.println("I'm sending a heartbeat");
->>>>>>> 61e2846b70b5815e64d1dad5e4d23d6e073ed210
 		//index of most recently
 		int localIndex = nextIndex.get(myId) - 1;
 		for(int i =0; i < connections.size(); i++)
