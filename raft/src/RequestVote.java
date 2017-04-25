@@ -69,7 +69,6 @@ public class RequestVote implements Runnable { // 5.2
 //				String one = sc.next();
 				voteGranted = sc.nextBoolean();
 				System.out.println("RequestVote: " + voteGranted);
-				returnTerm = sc.nextInt();
 				System.out.println(returnTerm);
 
 				Server.updateVotes(voteGranted);

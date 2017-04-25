@@ -31,17 +31,19 @@ public class Client {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		numServer = sc.nextInt();
+		sc.nextLine();
+		numServer = 0;
 		sc.nextLine();
 		ipAddresses = new ArrayList<String>();
 		ports = new ArrayList<Integer>();
 
-		for (int i = 0; i < numServer; i++) {
+		while (sc.hasNextLine()) {
 			// parse inputs to get the ips and ports of servers
 			String port = sc.nextLine();
 			String[] ipPort = port.split(":");
 			ipAddresses.add(ipPort[0]);
 			ports.add(Integer.parseInt(ipPort[1]));
+			numServer++;
 		}
 		sc.close();
 		sc = new Scanner(System.in);
