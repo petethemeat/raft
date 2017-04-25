@@ -136,7 +136,7 @@ public class Server
 				String token = sc.next();
 				
 				PrintStream tcpOutput = new PrintStream(dataSocket.getOutputStream(), true);
-				System.out.println(token);
+
 				//handles append message
 				if(token.equals("append"))
 				{
@@ -149,12 +149,10 @@ public class Server
 				else if(token.equals("requestVote"))
 				{
 					String message = handleRequest(sc);
-//					sc.close();
-					System.out.println(message);
 					tcpOutput.flush();
 					tcpOutput.println(message);
-					tcpOutput.flush();
 					tcpOutput.close();
+					sc.close();
 				}
 				
 				//handles client requests
@@ -192,8 +190,8 @@ public class Server
 						append(null);
 					}
 				}
-				
 				dataSocket.close();
+				
 
 			}
 			catch(InterruptedIOException e)
@@ -237,6 +235,18 @@ public class Server
 						}
 						//Call and empty heart beat
 						append(null);
+					}
+					
+					else
+					{
+						currentTerm += 1;
+						
+						votedFor = myId;
+						votes = 1;
+						
+						request();
+						
+						break;
 					}
 					
 				} 
