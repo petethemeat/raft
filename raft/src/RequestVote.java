@@ -45,16 +45,16 @@ public class RequestVote implements Runnable { // 5.2
 		String message = "requestVote " + term + " " + candidateId + " " + lastLogIndex + " " + lastLogTerm;
 
 		// Send request to specified server
-		System.out.println("[DEBUG]server at IP " + recipientIP);
+	//	System.out.println("[DEBUG]server at IP " + recipientIP);
 		Socket sock = null;
 		while (Server.getTerm() == term) {
 			try {
 				sock = new Socket();
 				sock.setSoTimeout(30000);
 
-				System.out.println("[DEBUG]attempting to connect");
+		//System.out.println("[DEBUG]attempting to connect");
 				sock.connect(new InetSocketAddress(recipientIP, recipientPort), 100);
-				System.out.println("[DEBUG]got connection");
+			//	System.out.println("[DEBUG]got connection");
 				PrintStream pout = new PrintStream(sock.getOutputStream(), true);
 				pout.flush();
 				pout.println(message);
@@ -78,22 +78,22 @@ public class RequestVote implements Runnable { // 5.2
 				pout.close();
 				sc.close();
 				sock.close();
-				System.out.println("\n[DEBUG] sent done message to " + recipientIP + ": " + message);
+				//System.out.println("\n[DEBUG] sent done message to " + recipientIP + ": " + message);
 				break;
 				// TODO crash after sending first one
 
 			} catch (SocketException e) {
 				// TODO Auto-generated catch block
-				System.out.println("Server at IP " + recipientIP + " has experienced a SocketException.");
+				//System.out.println("Server at IP " + recipientIP + " has experienced a SocketException.");
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
-				System.out.println("Server at IP " + recipientIP + " has experienced an IOException.");
+				//System.out.println("Server at IP " + recipientIP + " has experienced an IOException.");
 
 			}
 
 			
 		}
-		System.out.println("while loop terminated");
+		//System.out.println("while loop terminated");
 		return;
 
 	}

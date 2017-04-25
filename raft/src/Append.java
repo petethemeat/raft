@@ -23,14 +23,14 @@ public class Append implements Runnable { // not a runnable anymore, make your
 	private int recipientId;
 	private Socket dataSocket;
 	private int localIndex;
-
+	
 	private int returnTerm; // returned term, for the leader to update itself
 	private Boolean success; // true iff follower contained entry matching
 								// prevLogIndex and prevLogTerm
 								// null if not finished
 
 	public Append(int term, int leaderID, int prevLogIndex, int prevLogTerm, int leaderCommit,
-			ArrayList<LogEntry> entries, String recipientIP, int recipientPort, int recipientId, int localIndex) {
+			ArrayList<LogEntry> entries, String recipientIP, int recipientPort, int recipientId, int localIndex, Socket dataSocket) {
 		this.term = term;
 		this.leaderID = leaderID;
 		this.prevLogIndex = prevLogIndex;
@@ -41,24 +41,22 @@ public class Append implements Runnable { // not a runnable anymore, make your
 		this.recipientPort = recipientPort;
 		this.recipientId = recipientId;
 		this.localIndex = localIndex;
-
+		this.dataSocket =dataSocket;
 	}
 
 	// Attempts to send once, with timeout of one second
 	public void run() {
 
 		// Implementation of retry logic
-		while (true) {
+		while (term == Server.getTerm()) {
 			Socket sock = new Socket();
 			String message = "append " + term + " " + leaderID + " " + prevLogIndex + " " + prevLogTerm + " "
 					+ leaderCommit;
 
-			if (entries != null) {
 				List<LogEntry> subEntries = entries.subList(prevLogIndex + 1, localIndex + 1);
 				for (int i = 0; i < subEntries.size(); ++i) {
 					message = message + " " + subEntries.get(i).toString();
 				}
-			}
 			
 			try {
 				sock.setSoTimeout(30000);
@@ -68,10 +66,10 @@ public class Append implements Runnable { // not a runnable anymore, make your
 
 				Scanner sc = new Scanner(sock.getInputStream());
 
-				System.out.println("[DEBUG] Before while loop");
+				//System.out.println("[DEBUG] Before while loop");
 				while (!sc.hasNextLine()) {
 				}
-				System.out.println("[DEBUG] After while loop");
+				//System.out.println("[DEBUG] After while loop");
 				// expects single line response, in space-delimited form:
 				// success returnTerm
 
@@ -107,7 +105,7 @@ public class Append implements Runnable { // not a runnable anymore, make your
 
 				return;
 			} catch (Exception e) {
-				System.out.println("[DEBUG] Exception: " + e.getMessage());
+				//System.out.println("[DEBUG] Exception: " + e.getMessage());
 				if (Server.getTerm() != term) {
 					return;
 				}

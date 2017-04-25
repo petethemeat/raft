@@ -132,9 +132,11 @@ public class Server {
 				// handles append message
 				if (token.equals("append")) {
 
-					if (role == Role.candidate) {
+					/*if (role == Role.candidate) {
 						role = Role.follower;
 					}
+					This doesn't work. What if this is a heartbeat from an earlier term?
+					*/
 
 					String appendMessage = "";
 
@@ -149,6 +151,7 @@ public class Server {
 					tcpOutput.close();
 
 					sc.close();
+					dataSocket.close();
 				}
 
 				// handles requests for votes
@@ -160,15 +163,18 @@ public class Server {
 					tcpOutput.close();
 
 					sc.close();
+					dataSocket.close();
 				}
 
 				// handles client requests
 				else if (token.equals("client")) {
 					// redirect if not the current leader
 					if (role != Role.leader) {
+						/*
 						System.out.println("fail: not a leader!!"); // +
 																	// leaderId.toString());
 						continue;
+						this doesn't work either. We need to send back the id of the leader.*/
 					}
 
 					String cmd = "";
@@ -176,16 +182,11 @@ public class Server {
 						cmd = sc.nextLine();
 
 					handleClient(cmd);
-					append(log);
+					append(dataSocket);
 
-					String replyToClient = runMachine(log.get(log.size() - 1));
+					//String replyToClient = runMachine(log.get(log.size() - 1)); 
+					//We have to reply to the client once the command is replicated succesfully
 
-					System.out.println("[DEBUG] Reply to client: " + replyToClient);
-					tcpOutput.println(replyToClient);
-
-					tcpOutput.flush();
-					tcpOutput.close();
-					sc.close();
 				}
 
 				if (role == Role.candidate) {
@@ -205,7 +206,6 @@ public class Server {
 						System.out.println(" ");
 					}
 				}
-				dataSocket.close();
 
 			} catch (InterruptedIOException e) {
 				switch (role) {
@@ -228,6 +228,7 @@ public class Server {
 
 					// Request votes from everyone else
 					request();
+					break;
 
 				case candidate:
 
@@ -275,12 +276,9 @@ public class Server {
 
 	}
 
-	private static void append(ArrayList<LogEntry> entries) {
-		if (entries == null)
+	private static void append(Socket dataSocket) {
 			System.out.println("I'm sending a heartbeat");
-		else
-			System.out.println("I'm sending an entry");
-
+		
 		// index of most recently
 		int localIndex = nextIndex.get(myId) - 1;
 		for (int i = 0; i < connections.size(); i++) {
@@ -297,10 +295,10 @@ public class Server {
 			// currentConnection.ip+", "+currentConnection.port);
 			// start append RPC
 			Append current = new Append(currentTerm, myId, currentIndex, log.get(currentIndex).term, commitIndex,
-					entries, currentConnection.ip, currentConnection.port, i, localIndex);
+					log, currentConnection.ip, currentConnection.port, i, localIndex, dataSocket);
 			Thread t = new Thread(current);
 			t.start();
-
+			System.out.println(" ");
 		}
 	}
 
@@ -366,7 +364,7 @@ public class Server {
 			commitIndex = Math.min(leaderCommit, currentIndex);
 		}
 
-		System.out.println("[DEBUG] Return from append RPC : " + "true " + currentTerm.toString());
+		//System.out.println("[DEBUG] Return from append RPC : " + "true " + currentTerm.toString());
 		return "true " + currentTerm.toString();
 
 	}
@@ -400,6 +398,7 @@ public class Server {
 		if (term < currentTerm) {
 			return "false " + currentTerm.toString();
 		}
+		updateTerm(term);
 
 		int candidateId = Integer.parseInt(sc.next());
 		int prevTerm = Integer.parseInt(sc.next());
@@ -410,8 +409,7 @@ public class Server {
 			System.out.println("[DEBUG] false because prevIndex term != prevTerm");
 			return "false " + currentTerm.toString();
 		}
-		if ((term >= currentTerm) && (votedFor == null)) {
-			updateTerm(term);
+		if (votedFor == null) {
 			votedFor = candidateId;
 			return "true " + currentTerm.toString();
 		}
