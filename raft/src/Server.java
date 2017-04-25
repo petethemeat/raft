@@ -100,11 +100,6 @@ public class Server {
 		while (true) {
 			System.out.println(role.toString() + " " + currentTerm);
 
-			if (commitIndex > lastApplied) {
-				lastApplied++;
-				runMachine(log.get(lastApplied));
-			}
-
 			try {
 				if (role == Role.follower) {
 					tcpListener.setSoTimeout(ThreadLocalRandom.current().nextInt(minTimeOut, maxTimeOut + 1));
@@ -212,6 +207,7 @@ public class Server {
 				case leader:
 					// When leader does not receive a message, it will send a
 					// heartbeat to follows
+
 					append(null);
 					break;
 
@@ -343,7 +339,7 @@ public class Server {
 			for (int i = 5; i < tags.length; i++) {
 				System.out.println("[DEBUG] I am receiving entry");
 				String[] tokens = tags[i].split(";");
-				System.out.println("[DEBUG] newEntry: " + tokens[0] + ", " + tokens[1]);
+				//System.out.println("[DEBUG] newEntry: " + tokens[0] + ", " + tokens[1]);
 				LogEntry newEntry = new LogEntry(Integer.parseInt(tokens[0]), tokens[1]);
 
 				// adding new entry to the log
@@ -422,13 +418,14 @@ public class Server {
 	 * This method handles new messages from clients
 	 */
 	private static void handleClient(String command) {
-		System.out.println("[DEBUG] Adding term: " + currentTerm + ", command: " + command);
+		//System.out.println("[DEBUG] Adding term: " + currentTerm + ", command: " + command);
 		command = command.trim().replaceAll(" ", ":");
 		log.add(new LogEntry(currentTerm, command));
 		// Setting personal next index. This is used to reference where the log
 		// should be replicated to.
-
-		nextIndex.set(myId, nextIndex.get(myId) + 1);
+		int next = nextIndex.get(myId);
+		matchIndex.set(myId, next);
+		nextIndex.set(myId, next + 1);
 	}
 
 	public static synchronized void updateTerm(Integer otherTerm) {
@@ -441,8 +438,8 @@ public class Server {
 
 	public static synchronized void updateNextAndMatch(Boolean success, Integer recipientId, Integer localIndex) {
 		if (success) {
-			Server.nextIndex.set(recipientId, localIndex + 1);
-			Server.matchIndex.set(recipientId, localIndex);
+			Server.nextIndex.set(recipientId, localIndex + 2);
+			Server.matchIndex.set(recipientId, localIndex + 1);
 		} else {
 			int currentIndex = Server.nextIndex.get(recipientId);
 			Server.nextIndex.set(recipientId, currentIndex - 1);
@@ -453,10 +450,10 @@ public class Server {
 	public static synchronized Boolean checkForCommit(Integer localIndex) {
 		int count = 0;
 		for (Integer index : Server.matchIndex)
-			if (index == localIndex)
+			if (index >=localIndex)
 				count++;
 
-		if (count == connections.size() / 2 + 1) {
+		if (count >= connections.size() / 2 + 1) {
 
 			commitIndex = localIndex;
 			return true;
@@ -468,43 +465,43 @@ public class Server {
 	public static synchronized void updateVotes(Boolean result) {
 		if (result)
 			votes++;
-		System.out.println("Votes: " + votes);
-	}
+		}
 
 	/*
 	 * Code for running the statemachine
 	 */
 
-	public static synchronized String runMachine(LogEntry log) {
-		String reply = null;
-		String message = log.command;
-		String[] parts = message.split(":");
-		for(int i = 0; i<parts.length; i++){
-			parts[i] = parts[i].trim();
+	public static synchronized String runMachine(int end) {
+		String reply = "";
+		while(lastApplied < end)
+		{
+			String[] parts = log.get(lastApplied + 1).command.split(":");
+			for(int i = 0; i<parts.length; i++){
+				parts[i] = parts[i].trim();
+			}
+			
+			System.out.println(Arrays.toString(parts));
+			switch (parts[0]) {
+			case "purchase":
+				reply = inventory.purchase(parts[1], parts[2], Integer.parseInt(parts[3]));
+				lastApplied++;
+				break;
+			case "cancel":
+				reply = inventory.cancel(Integer.parseInt(parts[1]));
+				lastApplied++;
+				break;
+			case "list":
+				reply = inventory.list();
+				lastApplied++;
+				break;
+			case "search":
+				reply = inventory.search(parts[1]);
+				lastApplied++;
+				break;
+			case "_":
+				break;
+			}
 		}
-		
-		System.out.println(Arrays.toString(parts));
-		switch (parts[0]) {
-		case "purchase":
-			reply = inventory.purchase(parts[1], parts[2], Integer.parseInt(parts[3]));
-			lastApplied++;
-			break;
-		case "cancel":
-			reply = inventory.cancel(Integer.parseInt(parts[1]));
-			lastApplied++;
-			break;
-		case "list":
-			reply = inventory.list();
-			lastApplied++;
-			break;
-		case "search":
-			reply = inventory.search(parts[1]);
-			lastApplied++;
-			break;
-		case "_":
-			break;
-		}
-
 		return reply;
 	}
 

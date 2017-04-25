@@ -63,6 +63,9 @@ public class Append implements Runnable { // not a runnable anymore, make your
 				sock.connect(new InetSocketAddress(recipientIP, recipientPort), 100);
 				PrintStream pout = new PrintStream(sock.getOutputStream());
 				pout.println(message);
+				
+				if(subEntries.size() > 0)
+					{System.out.println("This is what I want");}
 
 				Scanner sc = new Scanner(sock.getInputStream());
 
@@ -82,19 +85,25 @@ public class Append implements Runnable { // not a runnable anymore, make your
 				success = Boolean.parseBoolean(tags[0]);
 				returnTerm = Integer.parseInt(tags[1]);
 
-				Server.updateNextAndMatch(success, recipientId, leaderCommit);
+				Server.updateNextAndMatch(success, recipientId, localIndex);
 				Server.checkForCommit(localIndex);
-				/*
-				 * if(Server.checkForCommit(localIndex)) { //this could happen
-				 * during a routine heartbeat
-				 * 
-				 * //TODO run state machine from lastapplied to commitindex
-				 * String reply = Server.runMachine();
-				 * 
-				 * //Write to client PrintWriter out = new
-				 * PrintWriter(dataSocket.getOutputStream());
-				 * out.println(reply); return; }
-				 */
+				
+				 if(Server.checkForCommit(localIndex)) 
+				 { 
+					 //this could happen during a routine heartbeat
+			  
+					 //TODO run state machine from lastapplied to commitindex
+					 String reply = Server.runMachine(localIndex);				  
+				  //Write to client PrintWriter out = new
+					 pout.println(reply);
+					 pout.flush();
+					 pout.close();
+					 dataSocket.close();
+					 return;
+					 
+				 }
+				 
+				 
 				
 
 				Server.updateTerm(returnTerm);
