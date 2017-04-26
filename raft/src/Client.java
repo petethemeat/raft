@@ -8,7 +8,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-
+//TODO: remove debug statements, fix the null printing
 //
 public class Client {
 
@@ -130,7 +130,7 @@ public class Client {
 			}
 		}
 		boolean firstline = true;
-		while (inStream.hasNextLine()) { // FIXME: return number of new leader
+		while (inStream.hasNextLine()) {
 											// if a "nope" message
 			String str = inStream.nextLine(); // will automatically return a
 												// blank line after 100ms
