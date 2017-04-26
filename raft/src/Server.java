@@ -185,7 +185,7 @@ public class Server
 					}
 					String client = sc.nextLine();
 					System.out.println("Client's response: " + client + "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nok");
-					handleClient(client); //FIXME: server only stores the first word of the client's request
+					handleClient(client);
 					append(dataSocket);
 					System.out.println("Append succeeded");
 					
@@ -445,7 +445,7 @@ public class Server
 	 */
 	private static void handleClient(String message)
 	{
-		log.add(new LogEntry(currentTerm, message.trim().replaceAll(" ", ":")));
+		log.add(new LogEntry(currentTerm, message.trim().replaceAll(" +", ":")));
 		//Setting personal next index. This is used to reference where the log should be replicated to.
 		
 		int next = nextIndex.get(myId);
@@ -517,7 +517,7 @@ public class Server
 		{
 			String message = log.get(lastApplied + 1).command;
 			String[] parts = message.split(":");
-			
+			try{
 			switch(parts[0])
 			{
 			case "purchase":
@@ -535,7 +535,12 @@ public class Server
 			case "_":
 				break;
 			}
-			lastApplied++;
+			}catch(Exception e){
+				reply = "ERROR: Invalid command syntax";
+			}finally{
+				lastApplied++;
+			}
+			
 		}
 		return reply;
 	}

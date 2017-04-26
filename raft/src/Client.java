@@ -11,9 +11,6 @@ import java.util.Scanner;
 //TODO: remove debug statements, fix the null printing
 //
 public class Client {
-
-	static String hostAddress;
-	static int tcpPort;
 	static int numServer;
 	// For tcp transfers
 	static Socket tcpSocket = null;
@@ -65,9 +62,9 @@ public class Client {
 														// is down, try the next
 						continue;
 					}
-					System.out.println("sent request");
+					//System.out.println("sent request");
 					int resp = echoTcpResponse(i);
-					System.out.println("Response: " + resp);
+					//System.out.println("Response: " + resp);
 					if (resp == -1) { // indicates failure
 						continue;
 					} else if (resp >= 0) {
@@ -132,7 +129,7 @@ public class Client {
 		boolean firstline = true;
 		while (inStream.hasNextLine()) {
 											// if a "nope" message
-			String str = inStream.nextLine(); // will automatically return a
+			String str = inStream.nextLine().replaceAll("null", "").replaceAll(" +"," "); // will automatically return a
 												// blank line after 100ms
 			if (firstline) {
 				String[] test = str.split(" ");
@@ -152,18 +149,18 @@ public class Client {
 	private static int getTcpSocket() {
 		for (int i = 0; true; i = (i + 1) % numServer) {
 			try {
-				System.out.println("[DEBUG]trying server " + (i));
+				//System.out.println("[DEBUG]trying server " + (i));
 				tcpSocket = new Socket();
 				tcpSocket.setSoTimeout(500);
 				tcpSocket.connect(new InetSocketAddress(ipAddresses.get(i), ports.get(i)), 500);
 				outStream = new PrintStream(tcpSocket.getOutputStream());
 				inStream = new Scanner(tcpSocket.getInputStream());
-				System.out.println("[DEBUG]successful connection");
+				//System.out.println("[DEBUG]successful connection");
 				return i;
 			} catch (UnknownHostException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
-				System.out.println("[DEBUG]server " + i + " timed out");
+				//System.out.println("[DEBUG]server " + i + " timed out");
 				continue;
 			}
 		}
