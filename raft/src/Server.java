@@ -447,7 +447,7 @@ public class Server
 	 */
 	private static void handleClient(String message)
 	{
-		log.add(new LogEntry(currentTerm, message));
+		log.add(new LogEntry(currentTerm, message.trim().replaceAll(" ", ":")));
 		//Setting personal next index. This is used to reference where the log should be replicated to.
 		
 		int next = nextIndex.get(myId);
@@ -530,8 +530,10 @@ public class Server
 				break;
 			case "list":
 				reply = inventory.list();
+				break;
 			case "search":
 				reply = inventory.search(parts[1]);
+				break;
 			case "_":
 				break;
 			}

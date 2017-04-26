@@ -126,7 +126,7 @@ public class Append implements Runnable { // not a runnable anymore, make your
 						return;
 
 					// Write to client
-					PrintWriter out = new PrintWriter(dataSocket.getOutputStream());
+					PrintStream out = new PrintStream(dataSocket.getOutputStream());
 					out.println(reply);
 					return;
 				}

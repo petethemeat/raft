@@ -10,6 +10,7 @@ public class LogEntry {
 			 */
 			public LogEntry(int term, String command)
 			{
+				command = command.trim();
 				this.command = command;
 				this.term = term;
 			}
@@ -22,6 +23,7 @@ public class LogEntry {
 			{
 				//split at ; to get term and command
 				//split at : to get command in pieces
+				command = command.trim();
 				return term.toString() + ";" + command.replaceAll(" ", ":");
 			}
 }
