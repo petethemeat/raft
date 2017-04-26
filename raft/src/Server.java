@@ -207,7 +207,6 @@ public class Server
 							nextIndex.add(log.size());
 						}
 						//Call and empty heart beat
-						handleClient("HelloWorld");
 						
 						append(null);
 						System.out.println(" ");
@@ -258,7 +257,6 @@ public class Server
 							nextIndex.add(log.size());
 						}
 						//Call and empty heart beat
-						handleClient("HelloWorld");
 						append(null);
 						System.out.println(" " );
 					}

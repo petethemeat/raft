@@ -66,7 +66,6 @@ public class Client {
 					}
 					System.out.println("sent request");
 					int resp = echoTcpResponse(i);
-					System.out.println("Response: " + resp);
 					if (resp == -1) { // indicates failure
 						continue;
 					} else if (resp >= 0) {
