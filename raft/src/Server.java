@@ -165,6 +165,7 @@ public class Server
 				else if(token.equals("requestVote"))
 				{
 					String message = handleRequest(sc);
+					System.out.println(message);
 					tcpOutput.flush();
 					tcpOutput.println(message);
 					tcpOutput.close();
@@ -182,8 +183,9 @@ public class Server
 						tcpOutput.println("fail " + leaderId.toString());
 						continue;
 					}
-
-					handleClient(sc.next());
+					String client = sc.nextLine();
+					System.out.println("Client's response: " + client + "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nok");
+					handleClient(client); //FIXME: server only stores the first word of the client's request
 					append(dataSocket);
 					System.out.println("Append succeeded");
 					
@@ -392,7 +394,7 @@ public class Server
 	private static void request()
 	{
 		System.out.println("I'm sending vote requests");
-		for(int i =0; i < connections.size(); i++)
+		for(int i = 0; i < connections.size(); i++)
 		{
 			if(i == myId) continue;
 			
@@ -422,13 +424,13 @@ public class Server
 			updateTerm(term);
 		}
 		int candidateId = Integer.parseInt(sc.next());
-		int prevTerm = Integer.parseInt(sc.next());
 		int prevIndex = Integer.parseInt(sc.next());
+		int prevTerm = Integer.parseInt(sc.next());
 		
 		//Message sent does not line up with current log
-//		if (prevTerm < log.get(log.size() - 1).term || (prevTerm == log.get(log.size() - 1).term) && prevIndex < log.size() - 1) 
-//			return "false " + currentTerm.toString(); 
-		if(prevIndex >= log.size() || log.get(prevIndex).term != prevTerm) return "false " + currentTerm.toString(); 
+		if (prevTerm < log.get(log.size() - 1).term || (prevTerm == log.get(log.size() - 1).term) && prevIndex < log.size() - 1) 
+			return "false " + currentTerm.toString(); 
+//		if(prevIndex >= log.size() || log.get(prevIndex).term != prevTerm) return "false " + currentTerm.toString(); 
 		
 		if (votedFor == null)
 		{

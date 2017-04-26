@@ -58,7 +58,9 @@ public class Client {
 					if(sendTcpRequest(cmd) == -1){ //returns -1 if there is an exception in the printstream, server is down, try the next
 						continue;
 					}
+					System.out.println("sent request");
 					int resp = echoTcpResponse(i);
+					System.out.println("Response: " + resp);
 					if(resp == -1){ //indicates failure
 						continue;
 					}
@@ -66,6 +68,7 @@ public class Client {
 						i = resp - 1;
 						continue;
 					}
+
 					break;
 				}
 				try {
@@ -140,8 +143,8 @@ public class Client {
 			try {
 				System.out.println("[DEBUG]trying server " + (i));
 				tcpSocket = new Socket();
-				tcpSocket.setSoTimeout(5500);
-				tcpSocket.connect(new InetSocketAddress(ipAddresses.get(i), ports.get(i)), 5500);
+				tcpSocket.setSoTimeout(500);
+				tcpSocket.connect(new InetSocketAddress(ipAddresses.get(i), ports.get(i)), 500);
 				outStream = new PrintStream(tcpSocket.getOutputStream());
 				inStream = new Scanner(tcpSocket.getInputStream());
 				System.out.println("[DEBUG]successful connection");
