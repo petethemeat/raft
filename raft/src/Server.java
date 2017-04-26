@@ -165,6 +165,7 @@ public class Server
 				else if(token.equals("requestVote"))
 				{
 					String message = handleRequest(sc);
+					System.out.println(message);
 					tcpOutput.flush();
 					tcpOutput.println(message);
 					tcpOutput.close();
@@ -183,7 +184,7 @@ public class Server
 						continue;
 					}
 
-					handleClient(sc.next());
+					handleClient(sc.next()); //FIXME: server only stores the first word of the client's request
 					append(dataSocket);
 					System.out.println("Append succeeded");
 					
@@ -386,7 +387,7 @@ public class Server
 	private static void request()
 	{
 		System.out.println("I'm sending vote requests");
-		for(int i =0; i < connections.size(); i++)
+		for(int i = 0; i < connections.size(); i++)
 		{
 			if(i == myId) continue;
 			

@@ -71,8 +71,7 @@ public class Append implements Runnable { // not a runnable anymore, make your
 				// success returnTerm
 				success = sc.nextBoolean();
 				System.out.println(success);
-				returnTerm = sc.nextInt();
-
+				returnTerm = sc.nextInt(); 
 				Server.updateNextAndMatch(success, recipientId, localIndex);
 				if (!success) {
 					prevLogIndex--;
