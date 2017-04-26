@@ -148,8 +148,8 @@ public class Client {
 			try {
 				System.out.println("[DEBUG]trying server " + (i));
 				tcpSocket = new Socket();
-				tcpSocket.setSoTimeout(50000);
-				tcpSocket.connect(new InetSocketAddress(ipAddresses.get(i), ports.get(i)), 50000);
+				tcpSocket.setSoTimeout(500);
+				tcpSocket.connect(new InetSocketAddress(ipAddresses.get(i), ports.get(i)), 500);
 				outStream = new PrintStream(tcpSocket.getOutputStream());
 				inStream = new Scanner(tcpSocket.getInputStream());
 				System.out.println("[DEBUG]successful connection");
