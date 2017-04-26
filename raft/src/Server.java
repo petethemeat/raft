@@ -297,7 +297,7 @@ public class Server
 		
 		counter++;
 
-		for(int i =0; i < connections.size(); i++)
+		for(int i = 0; i < connections.size(); i++)
 		{
 			if(i == myId) continue;
 			
@@ -324,7 +324,8 @@ public class Server
 		System.out.println("I received a heartbeat");
 		
 		int term = Integer.parseInt(sc.next());
-		if(term < currentTerm) return "false " + currentTerm.toString(); //Message sent from out of date leader
+		if(term < currentTerm) 
+			return "false " + currentTerm.toString(); //Message sent from out of date leader
 		
 		int leader = Integer.parseInt(sc.next()); //Message sent from new term
 		if(term >= currentTerm)
@@ -337,16 +338,22 @@ public class Server
 		int prevIndex = Integer.parseInt(sc.next());
 		
 		//Message sent is much to far ahead
-		if(prevIndex >= log.size()) return "false " + currentTerm.toString();
+		if (prevIndex >= log.size()) 
+			return "false " + currentTerm.toString();
 		
 		//Message has wrong term in prevIndex
-		if((log.get(prevIndex).term != prevTerm)) return "false " + currentTerm.toString(); 
-		
+		if ((log.get(prevIndex).term != prevTerm) && prevIndex != 0) {
+			for (int i = prevIndex; i < log.size(); i++) {
+				log.remove(prevIndex);
+			}
+			
+			return "false " + currentTerm.toString(); 
+		}
 		
 		int leaderCommit = Integer.parseInt(sc.next());
 		
 		int currentIndex = prevIndex + 1;
-		if(sc.hasNext())	//Is there anything to append?
+		while (sc.hasNext())	//Is there anything to append?
 		{
 			String[] tokens = sc.next().split(";");
 			LogEntry newEntry = new LogEntry(Integer.parseInt(tokens[0]), tokens[1]);
@@ -389,7 +396,7 @@ public class Server
 			RequestVote current = new RequestVote(currentTerm, myId, lastLogIndex, log.get(lastLogIndex).term, 
 						currentConnection.port, currentConnection.ip);
 			Thread t = new Thread(current);
-			t.start();			
+			t.start();
 		}
 	}
 	
@@ -413,7 +420,9 @@ public class Server
 		int prevIndex = Integer.parseInt(sc.next());
 		
 		//Message sent does not line up with current log
-		if(prevIndex >= log.size() || log.get(prevIndex).term != prevTerm) return "false " + currentTerm.toString(); 
+		if (prevTerm < log.get(log.size() - 1).term || (prevTerm == log.get(log.size() - 1).term) && prevIndex < log.size() - 1) 
+			return "false " + currentTerm.toString(); 
+//		if(prevIndex >= log.size() || log.get(prevIndex).term != prevTerm) return "false " + currentTerm.toString(); 
 		
 		if(votedFor == null)
 		{
@@ -478,14 +487,12 @@ public class Server
 		
 		return false;
 	}
+	
 	public static synchronized void updateVotes(Boolean result)
 	{
 		if(result) votes++;
 		System.out.println("Votes: " + votes);
 	}
-	
-	
-	
 	
 	/*
 	 * Code for running the statemachine
@@ -520,6 +527,10 @@ public class Server
 
 	public static Integer getTerm() {
 		return currentTerm;
+	}
+
+	public static Integer getLogTerm(int index) {
+		return log.get(index).term;
 	}
 	
 

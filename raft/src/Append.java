@@ -53,7 +53,7 @@ public class Append implements Runnable { // not a runnable anymore, make your
 		System.out.println("starting appendRPC");
 		// Implementation of retry logic
 		Socket sock = null;
-		while (Server.getTerm() == term && counter == Server.counter) {
+		while (Server.getTerm() == term) {
 			List<LogEntry> subEntries = entries.subList(prevLogIndex + 1, localIndex + 1);
 			sock = new Socket();
 			String message = "append " + term + " " + leaderID + " " + prevLogIndex + " " + prevLogTerm + " "
@@ -76,6 +76,7 @@ public class Append implements Runnable { // not a runnable anymore, make your
 				Server.updateNextAndMatch(success, recipientId, localIndex);
 				if (!success) {
 					prevLogIndex--;
+					prevLogTerm = Server.getLogTerm(prevLogIndex);
 					continue;
 				}
 				if (Server.checkForCommit(localIndex)) {
