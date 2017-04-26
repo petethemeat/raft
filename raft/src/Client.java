@@ -47,6 +47,7 @@ public class Client {
 		}
 		sc.close();
 		sc = new Scanner(System.in);
+		int initServer = 0;
 		while (sc.hasNextLine()) {
 			String cmd = sc.nextLine();
 			cmd = "client " + cmd;
@@ -55,7 +56,7 @@ public class Client {
 					|| tokens[1].equals("search")) {
 				// send appropriate command to the server and display the
 				// appropriate responses form the server
-				for (int i = 0; true; i = (i + 1) % numServer) {
+				for (int i = initServer; true; i = (i + 1) % numServer) {
 					i = getTcpSocket(); // automatically loops to the first open
 										// socket
 					if (sendTcpRequest(cmd) == -1) { // returns -1 if there is
@@ -70,6 +71,7 @@ public class Client {
 						continue;
 					} else if (resp >= 0) {
 						i = resp - 1;
+						initServer = resp - 1;
 						continue;
 					}
 
@@ -137,7 +139,10 @@ public class Client {
 					return Integer.parseInt(test[1]);
 				}
 			}
-			System.out.println(str);
+			if(str != null){
+				System.out.println(str);
+			}
+			
 		}
 		// System.out.println("[DEBUG]That's it");
 		return -2; // -2 encodes a successful read
