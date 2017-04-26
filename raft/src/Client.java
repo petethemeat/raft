@@ -8,7 +8,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-//TODO: remove debug statements, fix the null printing
+
 //
 public class Client {
 	static int numServer;
@@ -49,25 +49,30 @@ public class Client {
 			String cmd = sc.nextLine();
 			cmd = "client " + cmd;
 			String[] tokens = cmd.split(" ");
+			if(tokens.length < 1){
+				continue;
+			}
 			if (tokens[1].equals("purchase") || tokens[1].equals("cancel") || tokens[1].equals("list")
 					|| tokens[1].equals("search")) {
 				// send appropriate command to the server and display the
 				// appropriate responses form the server
 				for (int i = initServer; true; i = (i + 1) % numServer) {
-					i = getTcpSocket(); // automatically loops to the first open
+					i = getTcpSocket(i); // automatically loops to the first open
 										// socket
+					//System.out.println("[DEBUG] function returned " + i);
 					if (sendTcpRequest(cmd) == -1) { // returns -1 if there is
 														// an exception in the
 														// printstream, server
 														// is down, try the next
 						continue;
 					}
-					//System.out.println("sent request");
+					//System.out.println("[DEBUG] sent request");
 					int resp = echoTcpResponse(i);
 					//System.out.println("Response: " + resp);
 					if (resp == -1) { // indicates failure
 						continue;
 					} else if (resp >= 0) {
+						System.out.println("Server said that leader is " + resp);
 						i = resp - 1;
 						initServer = resp - 1;
 						continue;
@@ -104,17 +109,19 @@ public class Client {
 
 	private static int sendTcpRequest(String message) {
 		outStream.println(message);
-		if (outStream.checkError()) { // function returns -1 if an exception
+		if (outStream.checkError()) { // function returns true if an exception
 										// occurred
+			//System.out.println("[DEBUG] Message sending failed, yo");
 			return -1;
 		} else
+			//System.out.println("[DEBUG] Message sending success, returning 0");
 			return 0;
 	}
 
 	private static int echoTcpResponse(int i) {
 		// System.out.println("[DEBUG]Receiving message");
 		while (!inStream.hasNext()) {
-			// System.out.println("[DEBUG] timed out, pinging");
+			//System.out.println("[DEBUG] timed out, pinging");
 			try {
 				inStream = new Scanner(tcpSocket.getInputStream());
 			} catch (IOException e) {
@@ -146,8 +153,8 @@ public class Client {
 		return -2; // -2 encodes a successful read
 	}
 
-	private static int getTcpSocket() {
-		for (int i = 0; true; i = (i + 1) % numServer) {
+	private static int getTcpSocket(int start) {
+		for (int i = start; true; i = (i + 1) % numServer) {
 			try {
 				//System.out.println("[DEBUG]trying server " + (i));
 				tcpSocket = new Socket();
