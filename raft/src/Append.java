@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
@@ -27,7 +28,7 @@ public class Append implements Runnable { // not a runnable anymore, make your
 	private Boolean success; // true iff follower contained entry matching
 								// prevLogIndex and prevLogTerm
 								// null if not finished
-	
+
 	private int counter;
 
 	public Append(int term, int leaderID, int prevLogIndex, int prevLogTerm, int leaderCommit,
@@ -53,61 +54,59 @@ public class Append implements Runnable { // not a runnable anymore, make your
 		System.out.println("starting appendRPC");
 		// Implementation of retry logic
 		Socket sock = null;
-		while (Server.getTerm() == term) {
-			List<LogEntry> subEntries = entries.subList(prevLogIndex + 1, localIndex + 1);
-			sock = new Socket();
-			String message = "append " + term + " " + leaderID + " " + prevLogIndex + " " + prevLogTerm + " "
-					+ leaderCommit;
-			for (int i = 0; i < subEntries.size(); ++i) {
-				message = message + " " + subEntries.get(i).toString();
+		List<LogEntry> subEntries = entries.subList(prevLogIndex + 1, localIndex + 1);
+		sock = new Socket();
+		String message = "append " + term + " " + leaderID + " " + prevLogIndex + " " + prevLogTerm + " "
+				+ leaderCommit;
+		for (int i = 0; i < subEntries.size(); ++i) {
+			message = message + " " + subEntries.get(i).toString();
+		}
+		try {
+			sock.connect(new InetSocketAddress(recipientIP, recipientPort), 1000);
+			PrintStream pout = new PrintStream(sock.getOutputStream());
+			pout.println(message);
+			Scanner sc = new Scanner(sock.getInputStream());
+
+			// expects single line response, in space-delimited form:
+			// success returnTerm
+			success = sc.nextBoolean();
+			System.out.println("Server: " + recipientId + " - " + success);
+			returnTerm = sc.nextInt();
+
+			Server.updateNextAndMatch(success, recipientId, localIndex);
+			System.out.println("Server: " + recipientId + " made it past updateNextAndMatch");
+//			if (!success) {
+//				prevLogIndex--;
+//				prevLogTerm = Server.getLogTerm(prevLogIndex);
+//				continue;
+//			}
+			if (Server.checkForCommit(localIndex)) {
+				// TODO run state machine from lastapplied to commitindex
+				String reply = Server.runMachine();
+
+				// this could happen during a routine heartbeat
+
+				if (dataSocket == null)
+					return;
+
+				// Write to client
+				PrintWriter out = new PrintWriter(dataSocket.getOutputStream());
+				out.println(reply);
+				return;
 			}
-			try {
-				sock.connect(new InetSocketAddress(recipientIP, recipientPort), 1000);
-				PrintStream pout = new PrintStream(sock.getOutputStream());
-				pout.println(message);
-				Scanner sc = new Scanner(sock.getInputStream());
+			Server.updateTerm(returnTerm);
 
-				// expects single line response, in space-delimited form:
-				// success returnTerm
-				success = sc.nextBoolean();
-				System.out.println(success);
-				returnTerm = sc.nextInt();
+			sock.close();
+			pout.close();
+			sc.close();
 
-				Server.updateNextAndMatch(success, recipientId, localIndex);
-				if (!success) {
-					prevLogIndex--;
-					prevLogTerm = Server.getLogTerm(prevLogIndex);
-					continue;
-				}
-				if (Server.checkForCommit(localIndex)) {
-					// TODO run state machine from lastapplied to commitindex
-					String reply = Server.runMachine();
-
-					// this could happen during a routine heartbeat
-
-					if (dataSocket == null)
-						return;
-
-					// Write to client
-					PrintWriter out = new PrintWriter(dataSocket.getOutputStream());
-					out.println(reply);
-					return;
-				}
-				Server.updateTerm(returnTerm);
-
-				sock.close();
-				pout.close();
-				sc.close();
-
-				if (success)
-					return;
-			} catch (Exception e) {
-				if (Server.getTerm() != term) {
-					return;
-				}
+			if (success)
+				return;
+		} catch (IOException e) {
+			if (Server.getTerm() != term) {
+				return;
 			}
 		}
-
 	}
 
 }

@@ -324,8 +324,10 @@ public class Server
 		System.out.println("I received a heartbeat");
 		
 		int term = Integer.parseInt(sc.next());
-		if(term < currentTerm) 
+		if(term < currentTerm) {
+			System.out.println("Received term too low");
 			return "false " + currentTerm.toString(); //Message sent from out of date leader
+		}
 		
 		int leader = Integer.parseInt(sc.next()); //Message sent from new term
 		if(term >= currentTerm)
@@ -333,20 +335,23 @@ public class Server
 			updateTerm(term);
 			leaderId = leader;
 		}
-		
-		int prevTerm = Integer.parseInt(sc.next());
+
 		int prevIndex = Integer.parseInt(sc.next());
+		int prevTerm = Integer.parseInt(sc.next());
 		
 		//Message sent is much to far ahead
-		if (prevIndex >= log.size()) 
+		if (prevIndex >= log.size())  {
+			System.out.println("prevLogIndex: " + prevIndex + " too big");
 			return "false " + currentTerm.toString();
+		}
 		
 		//Message has wrong term in prevIndex
 		if ((log.get(prevIndex).term != prevTerm) && prevIndex != 0) {
 			for (int i = prevIndex; i < log.size(); i++) {
 				log.remove(prevIndex);
 			}
-			
+
+			System.out.println("Terms different at same index");
 			return "false " + currentTerm.toString(); 
 		}
 		
@@ -375,7 +380,8 @@ public class Server
 		{
 			commitIndex = Math.min(leaderCommit, currentIndex);
 		}
-		
+
+		System.out.println("Append succeeded");
 		return "true " + currentTerm.toString();
 				
 	}
@@ -420,11 +426,11 @@ public class Server
 		int prevIndex = Integer.parseInt(sc.next());
 		
 		//Message sent does not line up with current log
-		if (prevTerm < log.get(log.size() - 1).term || (prevTerm == log.get(log.size() - 1).term) && prevIndex < log.size() - 1) 
-			return "false " + currentTerm.toString(); 
-//		if(prevIndex >= log.size() || log.get(prevIndex).term != prevTerm) return "false " + currentTerm.toString(); 
+//		if (prevTerm < log.get(log.size() - 1).term || (prevTerm == log.get(log.size() - 1).term) && prevIndex < log.size() - 1) 
+//			return "false " + currentTerm.toString(); 
+		if(prevIndex >= log.size() || log.get(prevIndex).term != prevTerm) return "false " + currentTerm.toString(); 
 		
-		if(votedFor == null)
+		if (votedFor == null)
 		{
 			updateTerm(term);
 			votedFor = candidateId;
@@ -464,11 +470,13 @@ public class Server
 		{
 			Server.nextIndex.set(recipientId, localIndex + 1);
 			Server.matchIndex.set(recipientId, localIndex);
+			return;
 		}
 		else
 		{
 			int currentIndex = Server.nextIndex.get(recipientId);
 			Server.nextIndex.set(recipientId, currentIndex - 1);
+			return;
 		}
 	
 	}
@@ -476,9 +484,13 @@ public class Server
 	public static synchronized Boolean checkForCommit(Integer localIndex)
 	{
 		int count = 0;
-		for(Integer index : Server.matchIndex) if(index == localIndex) count++;
+		for (Integer index : Server.matchIndex){
+			if(index == localIndex){
+				count++;
+			}
+		}
 		
-		if(count >= connections.size()/2 + 1)
+		if (count >= connections.size()/2 + 1)
 		{
 			
 			commitIndex = localIndex;
@@ -521,6 +533,7 @@ public class Server
 			case "_":
 				break;
 			}
+			lastApplied++;
 		}
 		return reply;
 	}
